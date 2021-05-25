@@ -167,4 +167,17 @@ public class BitWriter {
             this.currentByteLen_U = (int)len_U;
         }
     }
+    	public static void bitWriterFlushByte() {
+		if(currentByteLen_U() != 0) {
+			currentByte_U = (byte)(Byte.toUnsignedInt(w[0].getCurrentByte_U()) << 8 - w[0].getCurrentByteLen_U());
+			bytes_U[byteIndex_U] = currentByte_U;
+			byteIndex_U++;
+			currentByteLen_U = 0;
+		}
+	}
+
+	public int bitWriterLength_U() {
+		return byteIndex_U;
+	}
+
 }
