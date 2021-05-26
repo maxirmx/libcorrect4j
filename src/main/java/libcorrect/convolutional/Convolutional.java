@@ -1,16 +1,26 @@
+/*
+ * libcorrect4j
+ * Convolutional.java
+ * Created from src/correct/convolutional/convolutional.c @ https://github.com/quiet/libcorrect
+ */
+
+package libcorrect.convolutional;
+
+
 public class Convolutional {
+
   private int[] table_U;              /* size 2**order */
   private long rate_U;                /* e.g. 2, 3...  */
   private final long order_U;         /* e.g. 7, 9...	 */
   private int numstates_U;            /* 2**order 	 */
   private BitWriter bitWriter;
-  private BitReade  bitReade;
+  private BitReader bitReader;
   
   private boolean hasInitDecode;
   private short[]   distances_U;
   private PairLookup pairLookup;
   private int softMeasuremen;
-  private HistoreBuffer historyBuffer;
+  private HistoryBuffer historyBuffer;
   private ErrorBuffer errorBuffer;
 
 	
@@ -31,9 +41,9 @@ private Convolutional(long rate_U, long order_U, short[] poly_U) {
 		this.numstates_U = (1 << order_U);
 		
 		this.table_U = new int [1 << order_U];
-		fillTable(this.getRate_U, this.order_U(), poly_U, this.table_U);
+		PairLookup.fillTable(this.rate_U, this.order_U, poly_U, this.table_U);
 
-		bitWiter = new BitWriter(null,0);
+		bitWriter = new BitWriter(null,0);
 		bitReader = new BitReader(null,0);
 	
 		this.hasInitDecode = false;
