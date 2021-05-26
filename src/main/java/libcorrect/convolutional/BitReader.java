@@ -41,7 +41,7 @@ public class BitReader {
 		this.byteIndex_U=0;
 	}
 
-	public byte bitReaderRead_U(int n_U) {
+	public byte bitReaderRead(int n_U) {
 		int read_U = 0;
 		int nCopy_U = n_U;
 
