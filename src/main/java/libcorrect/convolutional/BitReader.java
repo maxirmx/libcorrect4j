@@ -8,7 +8,7 @@ package libcorrect.convolutional;
 
 public class BitReader {
 
-	private static byte[] reverseTable_U = createReverseTable();
+	private static final byte[] reverseTable_U = createReverseTable();
 
 	private static byte[] createReverseTable() {
     byte[] rT_U = new byte[256];

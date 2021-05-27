@@ -10,24 +10,8 @@ import java.util.Arrays;
 
 public class ErrorBuffer {
     private int index;
-    private short[][] errors_U;
+    private final short[][] errors_U;
     private int numStates_U;
-
-    public short getReadErrors(int i) {
-        return errors_U[index][i];
-    }
-
-    private void setReadErrros(int i, short v) {
-        errors_U[index][i] = v;
-    }
-
-    public short getWriteErrors(int i) {
-        return errors_U[(index+1)%2][i];
-    }
-
-    private void setWriteErrors(int i, short v) {
-        errors_U[(index+1)%2][i] = v;
-    }
 
     public ErrorBuffer(int numStates_U) {
         // how large are the error buffers?
@@ -50,10 +34,25 @@ public class ErrorBuffer {
         Arrays.fill(errors_U[1], (short)0);
         index = 0;
     }
-
     public void errorBufferSwap() {
         index = (index+1)%2;
     }
+    public short getReadError(int i) {
+        return errors_U[index][i];
+    }
+    public void setReadError(int i, short v) {
+        errors_U[index][i] = v;
+    }
+    public short getWriteError(int i) {
+        return errors_U[(index+1)%2][i];
+    }
+    public void setWriteError(int i, short v) {
+        errors_U[(index+1)%2][i] = v;
+    }
+    public short[] getWriteErrors() {
+        return errors_U[(index+1)%2];
+    }
+
 
 }
 

@@ -5,14 +5,13 @@
  */
 package libcorrect.convolutional;
 
-
 public class PairLookup {
-    private int[] keys_U;
-    private int[] outputs_U;
-    private int outputMask_U;
-    private int outputWidth_U;
-    private int outputsLen_U;
-    private int[] distances_U;
+    private final int[] keys_U;
+    private final int[] outputs_U;
+    private final int outputMask_U;
+    private final int outputWidth_U;
+    private final int outputsLen_U;
+    private final int[] distances_U;
 
     private static int popcount(int x) {
         /* taken from the helpful http://graphics.stanford.edu/~seander/bithacks.html#CountBitsSetParallel */
@@ -20,7 +19,6 @@ public class PairLookup {
         x = (x & 0x33333333) + (x >> 2 & 0x33333333);
         return (x + (x >> 4) & 0x0f0f0f0f) * 0x01010101 >> 24;
     }
-
 
     public static void fillTable(int rate_U, int order_U, short[] poly_U, int[] table_U) {
         for(int i_U = 0; Integer.compareUnsigned(i_U, 1 << order_U) < 0; i_U++) {
@@ -75,6 +73,12 @@ public class PairLookup {
             this.distances_U[i_U]=Short.toUnsignedInt(distances_U[i1_U]) << 16 |
                                   Short.toUnsignedInt(distances_U[i0_U]);
         }
+    }
+    public int getKey(int i) {
+        return keys_U[i];
+    }
+    public int getDistance(int i) {
+        return distances_U[i];
     }
 
 }

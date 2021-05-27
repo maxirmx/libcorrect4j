@@ -22,15 +22,15 @@ public class HistoryBuffer {
     // history is a compact history representation for every shift register
     // state,
     //  one bit per time slice
-    private byte[][] history_U;
+    private final byte[][] history_U;
     // which slice are we writing next?
     private int index_U;
     //how many valid entries are there?
     private int len_U;
     // temporary store of fetched bits
-    private byte[] fetched_U;
+    private final byte[] fetched_U;
     // how often should we renormalize?
-    private int renormalizeInterval_U;
+    private final int renormalizeInterval_U;
     private int renormalizeCounter_U;
 
     public byte getHistory(int i, int j) {
