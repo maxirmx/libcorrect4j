@@ -18,7 +18,7 @@ public class BitReader {
                (i & 0x10) >> 1 | (i & 0x08) << 1 | (i & 0x04) << 3 | 
                (i & 0x02) << 5 | (i & 0x01) << 7);
 		}
-		return reverseTable_U;
+		return rT_U;
 	}
 
 	byte currentByte_U;;

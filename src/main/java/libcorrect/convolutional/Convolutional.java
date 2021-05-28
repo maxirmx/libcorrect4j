@@ -15,14 +15,14 @@ import static libcorrect.convolutional.Metric.metricDistance;
 public class Convolutional {
     // Convolutional Codes
 	// Convolutional polynomials are 16 bits wide
-	private final static short[] correctConvR126Polynomial_U = {073, 061};
-	private final static short[] correctConvR127Polynomial_U = {0161, 0127};
-	private final static short[] correctConvR128Polynomial_U = {0225, 0373};
-	private final static short[] correctConvR129Polynomial_U = {0767, 0545};
-	private final static short[] correctConvR136Polynomial_U = {053, 075, 047};
-	private final static short[] correctConvR137Polynomial_U = {0137, 0153, 0121};
-	private final static short[] correctConvR138Polynomial_U = {0333, 0257, 0351};
-	private final static short[] correctConvR139Polynomial_U = {0417, 0627, 0675};
+	public final static short[] correctConvR126Polynomial = {073, 061};
+	public final static short[] correctConvR127Polynomial = {0161, 0127};
+	public final static short[] correctConvR128Polynomial = {0225, 0373};
+	public final static short[] correctConvR129Polynomial = {0767, 0545};
+	public final static short[] correctConvR136Polynomial = {053, 075, 047};
+	public final static short[] correctConvR137Polynomial = {0137, 0153, 0121};
+	public final static short[] correctConvR138Polynomial = {0333, 0257, 0351};
+	public final static short[] correctConvR139Polynomial = {0417, 0627, 0675};
 
 
 	 // Maximum of unsigned integral types.
@@ -56,7 +56,7 @@ public class Convolutional {
 	 *
 	 * If this call is successful, it returns a non-NULL pointer.
 	 */
-private Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgumentException {
+public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgumentException {
 		if(Integer.compareUnsigned(order_U, Integer.SIZE) > 0) {
        // XXX turn this into an error code
         // printf("order must be smaller than 8 * sizeof(shift_register_t)\n");

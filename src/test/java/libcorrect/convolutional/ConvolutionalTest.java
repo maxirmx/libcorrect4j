@@ -4,31 +4,46 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Random;
 
+import static libcorrect.convolutional.Convolutional.correctConvR126Polynomial;
+
 
 class ConvolutionalTest {
-    public static long maxBlockLen_U = 4_096;
     public final static Random RANDOM = new Random(1);
 
-    public static long testConv_U(AbstractData conv, AbstractData[] testbenchPtr, long msgLen_U, double ebN0, double bpskBitEnergy, double bpskVoltage) {
-        byte[] msg_U = new byte[(int)maxBlockLen_U];
+    @Test
+    void correctConvolutionalT1_1() {
+        RANDOM.setSeed(System.currentTimeMillis());
 
-        long numErrors_U = 0;
+        // n.b. the error rates below are at 5.0dB/4.5dB for order 6 polys
+        //  and 4.5dB/4.0dB for order 7-9 polys. this can be easy to miss.
+        ConvTestbench tb = new ConvTestbench();
+        Convolutional conv = new Convolutional(2, 6, correctConvR126Polynomial);
 
-        while(msgLen_U != 0) {
-            long blockLen_U = Long.compareUnsigned(maxBlockLen_U, msgLen_U) < 0 ? maxBlockLen_U : msgLen_U;
-            msgLen_U -= blockLen_U;
-
-            for(int j_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(j_U), blockLen_U) < 0; j_U++) {
-                msg_U[j_U] = (byte)(RANDOM.nextInt() % 256);
-            }
-        }
-        return 0;
+        assert tb.assertTestResult(conv, 1, 2, 6, Float.POSITIVE_INFINITY, 0);
     }
-
 
     @Test
-    void correctConvolutionalEncodeLen() {
+    void correctConvolutionalT1_2() {
+        RANDOM.setSeed(System.currentTimeMillis());
+
+        // n.b. the error rates below are at 5.0dB/4.5dB for order 6 polys
+        //  and 4.5dB/4.0dB for order 7-9 polys. this can be easy to miss.
+        ConvTestbench tb = new ConvTestbench();
+        Convolutional conv = new Convolutional(2, 6, correctConvR126Polynomial);
+
+        assert tb.assertTestResult(conv, 1_000_000, 2, 6, 5.0, 5e-06);
     }
 
+    @Test
+    void correctConvolutionalT1_3() {
+        RANDOM.setSeed(System.currentTimeMillis());
+
+        // n.b. the error rates below are at 5.0dB/4.5dB for order 6 polys
+        //  and 4.5dB/4.0dB for order 7-9 polys. this can be easy to miss.
+        ConvTestbench tb = new ConvTestbench();
+        Convolutional conv = new Convolutional(2, 6, correctConvR126Polynomial);
+
+        assert tb.assertTestResult(conv, 1_000_000, 2, 6, 4.5, 3e-05);
+    }
 
 }
