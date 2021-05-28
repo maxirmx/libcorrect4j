@@ -13,9 +13,19 @@ import static libcorrect.SoftMeasurement.CORRECT_SOFT_LINEAR;
 import static libcorrect.convolutional.Metric.metricDistance;
 
 public class Convolutional {
-	/**
-	 * Maximum of unsigned integral types.
-	 */
+    // Convolutional Codes
+	// Convolutional polynomials are 16 bits wide
+	private final static short[] correctConvR126Polynomial_U = {073, 061};
+	private final static short[] correctConvR127Polynomial_U = {0161, 0127};
+	private final static short[] correctConvR128Polynomial_U = {0225, 0373};
+	private final static short[] correctConvR129Polynomial_U = {0767, 0545};
+	private final static short[] correctConvR136Polynomial_U = {053, 075, 047};
+	private final static short[] correctConvR137Polynomial_U = {0137, 0153, 0121};
+	private final static short[] correctConvR138Polynomial_U = {0333, 0257, 0351};
+	private final static short[] correctConvR139Polynomial_U = {0417, 0627, 0675};
+
+
+	 // Maximum of unsigned integral types.
 	private final static int UINT8_MAX = 255;
 	private final static int UINT16_MAX = 65_535;
 	private final static byte softMax_U = (byte)UINT8_MAX;
@@ -37,7 +47,15 @@ public class Convolutional {
   	private HistoryBuffer historyBuffer;
   	private ErrorBuffer errorBuffer;
 
-	
+	/**
+	 *  correct_convolutional_create allocates and initializes an encoder/decoder for
+	 * a convolutional code with the given parameters. This function expects that
+	 * poly will contain inv_rate elements. E.g., to create a conv. code instance
+	 * with rate 1/2, order 7 and polynomials 0161, 0127, call
+	 * correct_convolutional_create(2, 7, []correct_convolutional_polynomial_t{0161, 0127});
+	 *
+	 * If this call is successful, it returns a non-NULL pointer.
+	 */
 private Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgumentException {
 		if(Integer.compareUnsigned(order_U, Integer.SIZE) > 0) {
        // XXX turn this into an error code
@@ -61,12 +79,33 @@ private Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArg
 	
 		this.hasInitDecode = false;
 	}
+	/**
+	 * correct_convolutional_encode_len returns the number of *bits*
+	 * in a msg_len of given size, in *bytes*. In order to convert
+	 * this returned length to bytes, save the result of the length
+	 * modulo 8. If it's nonzero, then the length in bytes is
+	 * length/8 + 1. If it is zero, then the length is just
+	 * length/8.
+	 */
 
 	public long correctConvolutionalEncodeLen(long msgLen_U) {
 		long msgbits_U = 8 * msgLen_U;
 		long encodedbits_U = rate_U * (msgbits_U + order_U + 1);
 		return encodedbits_U;
 	}
+
+	/**
+	 * correct_convolutional_encode uses the given conv instance to
+	 * encode a block of data and write it to encoded. The length of
+	 * encoded must be long enough to hold the resulting encoded length,
+	 * which can be calculated by calling correct_convolutional_encode_len.
+	 * However, this length should first be converted to bytes, as that
+	 * function returns the length in bits.
+	 *
+	 * This function returns the number of bits written to encoded. If
+	 * this is not an exact multiple of 8, then it occupies an additional
+	 * byte.
+	 */
 
 	// shift in most significant bit every time, one byte at a time
 	// shift register takes most recent bit on right, shifts left
@@ -169,7 +208,7 @@ private Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArg
 			errorBuffer.errorBufferSwap();
 		}
 	}
-	public void convolutionalDecodeInner(int sets_U, byte[] soft_U) {
+	private void convolutionalDecodeInner(int sets_U, byte[] soft_U) {
 		int highbit_U = 1 << order_U - 1;
 		for(int i_U = order_U - 1; Long.compareUnsigned(Integer.toUnsignedLong(i_U), Integer.toUnsignedLong(sets_U) - order_U + 1) < 0; i_U++) {
 			// lasterrors are the aggregate bit errors for the states of shiftregister for the previous
@@ -276,7 +315,7 @@ private Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArg
 		}
 	}
 
-	public void convolutionalDecodeTail(int sets_U, byte[] soft_U) {
+	private void convolutionalDecodeTail(int sets_U, byte[] soft_U) {
 		// flush state registers
 		// now we only shift in 0s, skipping 1-successors
 		int highbit_U = 1 << order_U - 1;
@@ -378,7 +417,28 @@ private Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArg
 	}
 
 	/**
-	 * hard decoder
+	 * correct_convolutional_decode uses the given conv instance to
+	 * decode a block encoded by correct_convolutional_encode. This
+	 * call can cope with some bits being corrupted. This function
+	 * cannot detect if there are too many bits corrupted, however,
+	 * and will still write a message even if it is not recovered
+	 * correctly. It is up to the user to perform checksums or CRC
+	 * in order to guarantee that the decoded message is intact.
+	 *
+	 * num_encoded_bits should contain the length of encoded in *bits*.
+	 * This value need not be an exact multiple of 8. However,
+	 * it must be a multiple of the inv_rate used to create
+	 * the conv instance.
+	 *
+	 * This function writes the result to msg, which must be large
+	 * enough to hold the decoded message. A good conservative size
+	 * for this buffer is the number of encoded bits multiplied by the
+	 * rate of the code, e.g. for a rate 1/2 code, divide by 2. This
+	 * value should then be converted to bytes to find the correct
+	 * length for msg.
+	 *
+	 * This function returns the number of bytes written to msg. If
+	 * it fails, it returns -1.
 	 */
 	public long correctConvolutionalDecode(byte[] encoded_U, long numEncodedBits_U, byte[] msg_U) throws IllegalArgumentException {
 		if(Long.remainderUnsigned(numEncodedBits_U, this.rate_U) != 0) {
@@ -393,6 +453,28 @@ private Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArg
 
 		return convolutionalDecode(numEncodedBits_U, numEncodedBytes_U, msg_U, null);
 	}
+	/**
+	 *  correct_convolutional_decode_soft uses the given conv instance
+	 * to decode a block encoded by correct_convolutional_encode and
+	 * then modulated/demodulated to 8-bit symbols. This function expects
+	 * that 1 is mapped to 255 and 0 to 0. An erased symbol should be
+	 * set to 128. The decoded message may contain errors.
+	 *
+	 * num_encoded_bits should contain the length of encoded in *bits*.
+	 * This value need not be an exact multiple of 8. However,
+	 * it must be a multiple of the inv_rate used to create
+	 * the conv instance.
+	 *
+	 * This function writes the result to msg, which must be large
+	 * enough to hold the decoded message. A good conservative size
+	 * for this buffer is the number of encoded bits multiplied by the
+	 * rate of the code, e.g. for a rate 1/2 code, divide by 2. This
+	 * value should then be converted to bytes to find the correct
+	 * length for msg.
+	 *
+	 * This function returns the number of bytes written to msg. If
+	 * it fails, it returns -1.
+	 */
 
 	public long correctConvolutionalDecodeSoft(byte[] encoded_U, long numEncodedBits_U, byte[] msg_U) throws IllegalArgumentException {
 		if(Long.remainderUnsigned(numEncodedBits_U, this.rate_U) != 0) {
