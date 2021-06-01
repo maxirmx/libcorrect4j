@@ -18,10 +18,10 @@ public class Metric {
 
     public static short softDistanceLinear(int hardX_U, byte[] softY_U, long len_U, int shift) {
         short dist_U = 0;
-        for(int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), len_U) < 0; i_U++) {
+        for(int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), len_U) < 0; i++) {
             int softX_U = (byte)0 - (hardX_U & 1) & 0xff;
             hardX_U >>>= 1;
-            int d = Byte.toUnsignedInt(softY_U[i_U+shift]) - softX_U;
+            int d = Byte.toUnsignedInt(softY_U[i+shift]) - softX_U;
             dist_U = (short)(Short.toUnsignedInt(dist_U) + (d < 0 ? -d : d));
         }
         return dist_U;
@@ -32,11 +32,11 @@ public class Metric {
      */
     public static short softDistanceQuadratic(int hardX_U, byte[] softY_U, long len_U, int shift) {
         short dist_U = 0;
-        for(int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), len_U) < 0; i_U++) {
+        for(int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), len_U) < 0; i++) {
             // first, convert hard_x to a soft measurement (0 -> 0, 1 - > 255)
             int softX_U = (hardX_U & 1) != 0 ? 255 : 0;
             hardX_U >>>= 1;
-            int d = Byte.toUnsignedInt(softY_U[i_U+shift]) - softX_U;
+            int d = Byte.toUnsignedInt(softY_U[i+shift]) - softX_U;
             dist_U = (short)(Short.toUnsignedInt(dist_U) + d * d);
         }
         return (short)(Short.toUnsignedInt(dist_U) >> 3);

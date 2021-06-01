@@ -29,7 +29,7 @@ public class BitWriter {
     }
 
     public void write(byte val_U, int n_U) {
-        for (long j_U = 0; Long.compareUnsigned(j_U, Integer.toUnsignedLong(n_U)) < 0; j_U++) {
+        for (long j = 0; Long.compareUnsigned(j, Integer.toUnsignedLong(n_U)) < 0; j++) {
             write1(val_U);
             val_U = (byte) (Byte.toUnsignedInt(val_U) >> 1);
         }
@@ -141,7 +141,7 @@ public class BitWriter {
 
         long fullBytes_U = Long.divideUnsigned(len_U, 8);
 
-        for (long i_U = 0; Long.compareUnsigned(i_U, fullBytes_U) < 0; i_U++) {
+        for (long i = 0; Long.compareUnsigned(i, fullBytes_U) < 0; i++) {
             bytes_U[(int) byteIndex_U] = (byte) (Byte.toUnsignedInt(l_U[lIndex]) << 7 |
                     Byte.toUnsignedInt(l_U[lIndex - 1]) << 6 |
                     Byte.toUnsignedInt(l_U[lIndex - 2]) << 5 |

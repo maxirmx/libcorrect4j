@@ -82,8 +82,8 @@ public class HistoryBuffer {
 
     public void renormalize(short[] distances_U, int minRegister_U) {
         short minDistance_U = distances_U[minRegister_U];
-        for(int i_U = 0; Integer.compareUnsigned(i_U, numStates_U) < 0; i_U++) {
-            distances_U[i_U] = (short)(Short.toUnsignedInt(distances_U[i_U]) - Short.toUnsignedInt(minDistance_U));
+        for(int i = 0; Integer.compareUnsigned(i, numStates_U) < 0; i++) {
+            distances_U[i] = (short)(Short.toUnsignedInt(distances_U[i]) - Short.toUnsignedInt(minDistance_U));
         }
     }
 
@@ -94,7 +94,7 @@ public class HistoryBuffer {
         int highbit_U = this.highbit_U;
         int index_U = this.index_U;
         int cap_U = this.cap_U;
-        for(int j_U = 0; Integer.compareUnsigned(j_U, minTracebackLength_U) < 0; j_U++) {
+        for(int j = 0; Integer.compareUnsigned(j, minTracebackLength_U) < 0; j++) {
             if(index_U == 0) {
                 index_U = cap_U - 1;
             } else {
@@ -116,7 +116,7 @@ public class HistoryBuffer {
             prefetchIndex_U--;
         }
         int len_U = this.len_U;
-        for(int j_U = minTracebackLength_U; Integer.compareUnsigned(j_U, len_U) < 0; j_U++) {
+        for(int j = minTracebackLength_U; Integer.compareUnsigned(j, len_U) < 0; j++) {
             index_U = prefetchIndex_U;
             if(prefetchIndex_U == 0) {
                 prefetchIndex_U = cap_U - 1;

@@ -2,6 +2,7 @@
  * libcorrect4j
  * Convolutional.java
  * Created from src/correct/convolutional/convolutional.c
+ * 				include/correct/convolutional.h
  * 				src/correct/convolutional/encode.c
  * 				src/correct/convolutional/decode.c  @ https://github.com/quiet/libcorrect
  */
@@ -9,11 +10,10 @@
 package libcorrect.convolutional;
 
 
-import static libcorrect.SoftMeasurement.CORRECT_SOFT_LINEAR;
 import static libcorrect.convolutional.Metric.distance;
 
 public class Convolutional {
-    // Convolutional Codes
+	// Convolutional Codes
 	// Convolutional polynomials are 16 bits wide
 	public final static short[] correctConvR126Polynomial = {073, 061};
 	public final static short[] correctConvR127Polynomial = {0161, 0127};
@@ -24,6 +24,8 @@ public class Convolutional {
 	public final static short[] correctConvR138Polynomial = {0333, 0257, 0351};
 	public final static short[] correctConvR139Polynomial = {0417, 0627, 0675};
 
+	public final static int CORRECT_SOFT_LINEAR = 0;
+	public final static int CORRECT_SOFT_QUADRATIC = CORRECT_SOFT_LINEAR + 1;
 
 	 // Maximum of unsigned integral types.
 	private final static int UINT8_MAX = 255;
@@ -88,7 +90,7 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 	 * length/8.
 	 */
 
-	public long correctConvolutionalEncodeLen(long msgLen_U) {
+	public long encodeLen(long msgLen_U) {
 		long msgbits_U = 8 * msgLen_U;
 		long encodedbits_U = rate_U * (msgbits_U + order_U + 1);
 		return encodedbits_U;
@@ -112,7 +114,7 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 	// poly is written in same order, just & mask message w/ poly
 
 	// assume that encoded length is long enough?
-	public long correctConvolutionalEncode(byte[] msg_U, long msgLen_U,byte[] encoded_U) {
+	public long encode(byte[] msg_U, long msgLen_U, byte[] encoded_U) {
 
 		// convolutional code convolves filter coefficients, given by
 		//     the polynomial, with some history from our message.
@@ -124,7 +126,7 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 		// e.g. if order is 7, then remove the 8th bit and beyond
 		int shiftmask_U = (1 << order_U) - 1;
 
-		long encodedLenBits_U = correctConvolutionalEncodeLen(msgLen_U);
+		long encodedLenBits_U = encodeLen(msgLen_U);
 		long encodedLen_U = Long.remainderUnsigned(encodedLenBits_U, 8) != 0 ?
 									Long.divideUnsigned(encodedLenBits_U, 8) + 1 :
 									Long.divideUnsigned(encodedLenBits_U, 8);
@@ -158,7 +160,7 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 
 		return encodedLenBits_U;
 	}
-	public void convDecodePrintIter(int iter_U, int winnerIndex_U) {
+	public void decodePrintIter(int iter_U, int winnerIndex_U) {
 		if(Integer.compareUnsigned(iter_U, 2_220) < 0) {
 			return;
 		}
@@ -179,7 +181,7 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 		System.out.println();
 	}
 
-	private void convolutionalDecodeWarmup(int sets_U, byte[] soft_U) {
+	private void decodeWarmup(int sets_U, byte[] soft_U) {
 		// first phase: load shiftregister up from 0 (order goes from 1 to conv->order)
 		// we are building up error metrics for the first order bits
 		for(int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), this.order_U - 1) < 0 && Integer.compareUnsigned(i_U, sets_U) < 0; i_U++) {
@@ -208,7 +210,7 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 			errorBuffer.swap();
 		}
 	}
-	private void convolutionalDecodeInner(int sets_U, byte[] soft_U) {
+	private void decodeInner(int sets_U, byte[] soft_U) {
 		int highbit_U = 1 << order_U - 1;
 		for(int i_U = order_U - 1; Long.compareUnsigned(Integer.toUnsignedLong(i_U), Integer.toUnsignedLong(sets_U) - order_U + 1) < 0; i_U++) {
 			// lasterrors are the aggregate bit errors for the states of shiftregister for the previous
@@ -315,7 +317,7 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 		}
 	}
 
-	private void convolutionalDecodeTail(int sets_U, byte[] soft_U) {
+	private void decodeTail(int sets_U, byte[] soft_U) {
 		// flush state registers
 		// now we only shift in 0s, skipping 1-successors
 		int highbit_U = 1 << order_U - 1;
@@ -380,7 +382,7 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 
 	}
 
-	private void convolutionalDecodeInit(int minTraceback_U, int tracebackLength_U, int renormalizeInterval_U) {
+	private void decodeInit(int minTraceback_U, int tracebackLength_U, int renormalizeInterval_U) {
 		hasInitDecode = true;
 		distances_U = new short[1 << rate_U];
 		pairLookup = new PairLookup(rate_U, order_U, table_U);
@@ -392,11 +394,11 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 		errorBuffer = new ErrorBuffer(numstates_U);
 	}
 
-	private long convolutionalDecode(long numEncodedBits_U, long numEncodedBytes_U, byte[] msg_U, byte[] softEncoded_U) {
+	private long decode(long numEncodedBits_U, long numEncodedBytes_U, byte[] msg_U, byte[] softEncoded_U) {
 		if(!this.hasInitDecode) {
 			long maxErrorPerInput_U = rate_U * Byte.toUnsignedLong(softMax_U);
 			int renormalizeInterval_U = (int)Long.divideUnsigned(Short.toUnsignedLong(distanceMax_U), maxErrorPerInput_U);
-			convolutionalDecodeInit(5 * order_U, 15 * order_U, renormalizeInterval_U);
+			decodeInit(5 * order_U, 15 * order_U, renormalizeInterval_U);
 		}
 
 		int sets_U = (int) Long.divideUnsigned(numEncodedBits_U, rate_U);
@@ -407,9 +409,9 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 		historyBuffer.reset();
 
 		// no outputs are generated during warmup
-		convolutionalDecodeWarmup(sets_U, softEncoded_U);
-		convolutionalDecodeInner(sets_U, softEncoded_U);
-		convolutionalDecodeTail(sets_U, softEncoded_U);
+		decodeWarmup(sets_U, softEncoded_U);
+		decodeInner(sets_U, softEncoded_U);
+		decodeTail(sets_U, softEncoded_U);
 
 		historyBuffer.flush(bitWriter);
 
@@ -440,7 +442,7 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 	 * This function returns the number of bytes written to msg. If
 	 * it fails, it returns -1.
 	 */
-	public long correctConvolutionalDecode(byte[] encoded_U, long numEncodedBits_U, byte[] msg_U) throws IllegalArgumentException {
+	public long decode(byte[] encoded_U, long numEncodedBits_U, byte[] msg_U) throws IllegalArgumentException {
 		if(Long.remainderUnsigned(numEncodedBits_U, this.rate_U) != 0) {
 			// XXX turn this into an error code
 			// printf("encoded length of message must be a multiple of rate\n");
@@ -451,7 +453,7 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 																						  Long.divideUnsigned(numEncodedBits_U, 8);
 		bitReader.reconfigure(encoded_U, numEncodedBytes_U);
 
-		return convolutionalDecode(numEncodedBits_U, numEncodedBytes_U, msg_U, null);
+		return decode(numEncodedBits_U, numEncodedBytes_U, msg_U, null);
 	}
 	/**
 	 *  correct_convolutional_decode_soft uses the given conv instance
@@ -476,7 +478,7 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 	 * it fails, it returns -1.
 	 */
 
-	public long correctConvolutionalDecodeSoft(byte[] encoded_U, long numEncodedBits_U, byte[] msg_U) throws IllegalArgumentException {
+	public long decodeSoft(byte[] encoded_U, long numEncodedBits_U, byte[] msg_U) throws IllegalArgumentException {
 		if(Long.remainderUnsigned(numEncodedBits_U, this.rate_U) != 0) {
 			// XXX turn this into an error code
 			// printf("encoded length of message must be a multiple of rate\n");
@@ -486,7 +488,7 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 		long numEncodedBytes_U = Long.remainderUnsigned(numEncodedBits_U, 8) != 0 ? Long.divideUnsigned(numEncodedBits_U, 8) + 1 :
 								 Long.divideUnsigned(numEncodedBits_U, 8);
 
-		return convolutionalDecode(numEncodedBits_U, numEncodedBytes_U, msg_U, encoded_U);
+		return decode(numEncodedBits_U, numEncodedBytes_U, msg_U, encoded_U);
 	}
 
 }

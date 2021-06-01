@@ -70,7 +70,7 @@ public class ConvTestbench {
     }
 
     public int testConvNoise(byte[] msg_U, long nBytes_U, double bpskVoltage) {
-        conv.correctConvolutionalEncode(msg_U, nBytes_U, encoded_U);
+        conv.encode(msg_U, nBytes_U, encoded_U);
         ErrorSim.encodeBpsk(encoded_U, v, enclen_U, bpskVoltage);
 
         corrupted = Arrays.copyOf(v, (int)enclen_U);
@@ -79,7 +79,7 @@ public class ConvTestbench {
 
         Arrays.fill(msgOut_U, (byte) 0);
 
-        long decodeLen = conv.correctConvolutionalDecodeSoft(soft_U,enclen_U, msgOut_U);
+        long decodeLen = conv.decodeSoft(soft_U,enclen_U, msgOut_U);
 
         if(decodeLen != nBytes_U) {
             System.out.printf("Expected to decode %d bytes, decoded %d bytes instead\n", nBytes_U, decodeLen);
@@ -98,7 +98,7 @@ public class ConvTestbench {
             msgOut_U = new byte[(int) msgLen_U];
         }
 
-        enclen_U = conv.correctConvolutionalEncodeLen(msgLen_U);
+        enclen_U = conv.encodeLen(msgLen_U);
         enclenBytes_U = Long.remainderUnsigned(enclen_U, 8) != 0 ?
                                         Long.divideUnsigned(enclen_U, 8) + 1 :
                                         Long.divideUnsigned(enclen_U, 8);
