@@ -10,7 +10,7 @@ package libcorrect.convolutional;
 
 
 import static libcorrect.SoftMeasurement.CORRECT_SOFT_LINEAR;
-import static libcorrect.convolutional.Metric.metricDistance;
+import static libcorrect.convolutional.Metric.distance;
 
 public class Convolutional {
     // Convolutional Codes
@@ -128,20 +128,20 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 		long encodedLen_U = Long.remainderUnsigned(encodedLenBits_U, 8) != 0 ?
 									Long.divideUnsigned(encodedLenBits_U, 8) + 1 :
 									Long.divideUnsigned(encodedLenBits_U, 8);
-		bitWriter.bitWriterReconfigure(encoded_U, encodedLen_U);
-		bitReader.bitReaderReconfigure(msg_U, msgLen_U);
+		bitWriter.reconfigure(encoded_U, encodedLen_U);
+		bitReader.reconfigure(msg_U, msgLen_U);
 
 		for(long i_U = 0; Long.compareUnsigned(i_U, 8 * msgLen_U) < 0; i_U++) {
 			// shiftregister has oldest bits on left, newest on right
 			shiftregister_U <<= 1;
-			shiftregister_U |= bitReader.bitReaderRead(1);
+			shiftregister_U |= bitReader.read(1);
 			shiftregister_U &= shiftmask_U;
 			// shift most significant bit from byte and move down one bit at a time
 
 			// we do direct lookup of our convolutional output here
 			// all of the bits from this convolution are stored in this row
 			int out_U = table_U[shiftregister_U];
-			bitWriter.bitWriterWrite((byte)out_U, rate_U);
+			bitWriter.write((byte)out_U, rate_U);
 		}
 		// now flush the shiftregister
 		// this is simply running the loop as above but without any new inputs
@@ -150,11 +150,11 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 			shiftregister_U <<= 1;
 			shiftregister_U &= shiftmask_U;
 			int out_U = table_U[shiftregister_U];
-			bitWriter.bitWriterWrite((byte) out_U, rate_U);
+			bitWriter.write((byte) out_U, rate_U);
 		}
 
 		// 0-fill any remaining bits on our final byte
-		bitWriter.bitWriterFlushByte();
+		bitWriter.flushByte();
 
 		return encodedLenBits_U;
 	}
@@ -187,7 +187,7 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 			// the difference being that this `out` will have the channel noise/errors applied
 			int out_U=0;
 			if(soft_U == null) {
-				out_U = bitReader.bitReaderRead(this.rate_U);
+				out_U = bitReader.read(this.rate_U);
 			}
 			// walk all of the state we have so far
 			for(int j_U = 0; Integer.compareUnsigned(j_U, 1 << i_U + 1) < 0; j_U += 1) {
@@ -196,16 +196,16 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 
 				if(soft_U != null) {
 					if (softMeasurement == CORRECT_SOFT_LINEAR) {
-						dist_U = Metric.metricSoftDistanceLinear(table_U[j_U], soft_U, this.rate_U, i_U * this.rate_U);
+						dist_U = Metric.softDistanceLinear(table_U[j_U], soft_U, this.rate_U, i_U * this.rate_U);
 					} else {
-						dist_U = Metric.metricSoftDistanceQuadratic(table_U[j_U], soft_U, this.rate_U, i_U * this.rate_U);
+						dist_U = Metric.softDistanceQuadratic(table_U[j_U], soft_U, this.rate_U, i_U * this.rate_U);
 					}
 				} else {
-					dist_U = metricDistance(table_U[(int) j_U],out_U);
+					dist_U = distance(table_U[(int) j_U],out_U);
 				}
 				errorBuffer.setWriteError(j_U, (short) (dist_U + errorBuffer.getReadError(last_U)));
 			}
-			errorBuffer.errorBufferSwap();
+			errorBuffer.swap();
 		}
 	}
 	private void convolutionalDecodeInner(int sets_U, byte[] soft_U) {
@@ -216,27 +216,27 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 			if(soft_U != null) {
 				if(softMeasurement == CORRECT_SOFT_LINEAR) {
 					for(int j_U = 0; Integer.compareUnsigned(j_U, 1 << rate_U) < 0; j_U++) {
-						distances_U[j_U] = Metric.metricSoftDistanceLinear(j_U, soft_U, rate_U,i_U * rate_U);
+						distances_U[j_U] = Metric.softDistanceLinear(j_U, soft_U, rate_U,i_U * rate_U);
 					}
 				} else {
 					for(int j_U = 0; Integer.compareUnsigned(j_U, 1 << rate_U) < 0; j_U++) {
-						distances_U[j_U] = (short)Metric.metricSoftDistanceQuadratic(j_U, soft_U, rate_U,i_U * rate_U);
+						distances_U[j_U] = (short)Metric.softDistanceQuadratic(j_U, soft_U, rate_U,i_U * rate_U);
 					}
 				}
 			} else {
-				int out_U = bitReader.bitReaderRead(rate_U);
+				int out_U = bitReader.read(rate_U);
 				for (int i2_U = 0; Integer.compareUnsigned(i2_U, 1 << rate_U) < 0; i2_U++) {
-					distances_U[i2_U] = metricDistance(i2_U, out_U);
+					distances_U[i2_U] = distance(i2_U, out_U);
 				}
 			}
 
-			pairLookup.pairLookupFillDistance(distances_U);
+			pairLookup.fillDistance(distances_U);
 
 			// a mask to get the high order bit from the shift register
 			int numIter_U = highbit_U << 1;
 			// aggregate bit errors for this time slice
 
-			byte[] history_U = historyBuffer.historyBufferGetSlice();
+			byte[] history_U = historyBuffer.getSlice();
 			// walk through all states, ignoring oldest bit
 			// we will track a best register state (path) and the number of bit errors at that path at
 			// this time slice
@@ -310,8 +310,8 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 
 				}
 			}
-			historyBuffer.historyBufferProcess(errorBuffer.getWriteErrors(), bitWriter);
-			errorBuffer.errorBufferSwap();
+			historyBuffer.process(errorBuffer.getWriteErrors(), bitWriter);
+			errorBuffer.swap();
 		}
 	}
 
@@ -323,22 +323,22 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 		for(int i_U = (int)(Integer.toUnsignedLong(sets_U) - order_U + 1); Integer.compareUnsigned(i_U, sets_U) < 0; i_U++) {
 			// lasterrors are the aggregate bit errors for the states of shiftregister for the previous
 			// time slice
-			byte[] history_U = historyBuffer.historyBufferGetSlice();
+			byte[] history_U = historyBuffer.getSlice();
 			// calculate the distance from all output states to our sliced bits
 			if(soft_U != null) {
 				if(softMeasurement == CORRECT_SOFT_LINEAR) {
 					for(int j_U = 0; Integer.compareUnsigned(j_U, 1 << rate_U) < 0; j_U++) {
-						distances_U[j_U] = Metric.metricSoftDistanceLinear(j_U, soft_U, rate_U,i_U * rate_U);
+						distances_U[j_U] = Metric.softDistanceLinear(j_U, soft_U, rate_U,i_U * rate_U);
 					}
 				} else {
 					for(int j_U = 0; Integer.compareUnsigned(j_U, 1 << rate_U) < 0; j_U++) {
-						distances_U[j_U] = (short)Metric.metricSoftDistanceQuadratic(j_U, soft_U, rate_U,i_U * rate_U);
+						distances_U[j_U] = (short)Metric.softDistanceQuadratic(j_U, soft_U, rate_U,i_U * rate_U);
 					}
 				}
 			} else {
-				int out_U = bitReader.bitReaderRead(rate_U);
+				int out_U = bitReader.read(rate_U);
 				for (int i2_U = 0; Integer.compareUnsigned(i2_U, 1 << rate_U) < 0; i2_U++) {
-					distances_U[i2_U] = metricDistance(i2_U, out_U);
+					distances_U[i2_U] = distance(i2_U, out_U);
 				}
 			}
 
@@ -374,8 +374,8 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 				history_U[successor_U] = historyMask_U;
 
 			}
-			historyBuffer.historyBufferProcessSkip(errorBuffer.getWriteErrors(), bitWriter, skip_U);
-			errorBuffer.errorBufferSwap();
+			historyBuffer.processSkip(errorBuffer.getWriteErrors(), bitWriter, skip_U);
+			errorBuffer.swap();
 		}
 
 	}
@@ -402,18 +402,18 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 		int sets_U = (int) Long.divideUnsigned(numEncodedBits_U, rate_U);
 		// XXX fix this vvvvvv
 		long decodedLenBytes_U = numEncodedBytes_U;
-		bitWriter.bitWriterReconfigure(msg_U, decodedLenBytes_U);
-		errorBuffer.errorBufferReset();
-		historyBuffer.historyBufferReset();
+		bitWriter.reconfigure(msg_U, decodedLenBytes_U);
+		errorBuffer.reset();
+		historyBuffer.reset();
 
 		// no outputs are generated during warmup
 		convolutionalDecodeWarmup(sets_U, softEncoded_U);
 		convolutionalDecodeInner(sets_U, softEncoded_U);
 		convolutionalDecodeTail(sets_U, softEncoded_U);
 
-		historyBuffer.historyBufferFlush(bitWriter);
+		historyBuffer.flush(bitWriter);
 
-		return bitWriter.bitWriterLength_U();
+		return bitWriter.length();
 	}
 
 	/**
@@ -449,7 +449,7 @@ public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgu
 
 		long numEncodedBytes_U = Long.remainderUnsigned(numEncodedBits_U, 8) != 0 ? Long.divideUnsigned(numEncodedBits_U, 8) + 1 :
 																						  Long.divideUnsigned(numEncodedBits_U, 8);
-		bitReader.bitReaderReconfigure(encoded_U, numEncodedBytes_U);
+		bitReader.reconfigure(encoded_U, numEncodedBytes_U);
 
 		return convolutionalDecode(numEncodedBits_U, numEncodedBytes_U, msg_U, null);
 	}

@@ -12,11 +12,11 @@ public class Metric {
     /**
      * implemented as population count of x XOR y
      */
-    public static short metricDistance(int x_U, int y_U) {
+    public static short distance(int x_U, int y_U) {
         return (short)bitCount(x_U ^ y_U);
     }
 
-    public static short metricSoftDistanceLinear(int hardX_U, byte[] softY_U, long len_U, int shift) {
+    public static short softDistanceLinear(int hardX_U, byte[] softY_U, long len_U, int shift) {
         short dist_U = 0;
         for(int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), len_U) < 0; i_U++) {
             int softX_U = (byte)0 - (hardX_U & 1) & 0xff;
@@ -30,7 +30,7 @@ public class Metric {
      * since euclidean dist is sqrt(a^2 + b^2 + ... + n^2), the square is just
      * a^2 + b^2 + ... + n^2
      */
-    public static short metricSoftDistanceQuadratic(int hardX_U, byte[] softY_U, long len_U, int shift) {
+    public static short softDistanceQuadratic(int hardX_U, byte[] softY_U, long len_U, int shift) {
         short dist_U = 0;
         for(int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), len_U) < 0; i_U++) {
             // first, convert hard_x to a soft measurement (0 -> 0, 1 - > 255)

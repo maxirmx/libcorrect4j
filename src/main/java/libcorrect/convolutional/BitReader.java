@@ -29,11 +29,11 @@ public class BitReader {
 
 	public BitReader(byte[] bytes_U, long len_U) {
 		if(bytes_U != null) {
-			bitReaderReconfigure(bytes_U, len_U);
+			reconfigure(bytes_U, len_U);
 		}
 	}
 
-	public void bitReaderReconfigure(byte[] bytes_U, long len_U) {
+	public void reconfigure(byte[] bytes_U, long len_U) {
 		this.bytes_U = bytes_U;
 		this.len_U = len_U;
 		this.currentByteLen_U = 8;
@@ -41,7 +41,7 @@ public class BitReader {
 		this.byteIndex_U=0;
 	}
 
-	public byte bitReaderRead(int n_U) {
+	public byte read(int n_U) {
 		int read_U = 0;
 		int nCopy_U = n_U;
 

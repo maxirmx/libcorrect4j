@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.Random;
 
 public class ConvTestbench {
-    public final static long maxBlockLen_U = 4_096;
+    public final static int maxBlockLen = 4_096;
     public final static Random RANDOM = new Random(1);
 
 
@@ -40,28 +40,28 @@ public class ConvTestbench {
         long errorCount_U = testConv(ebN0, bpskBitEnergy, bpskVoltage);
         double observedErrorRate = Double.parseDouble(Long.toUnsignedString(errorCount_U)) / (Double.parseDouble(Long.toUnsignedString(testLength_U)) * 8);
         if(observedErrorRate > errorRate) {
-            System.out.printf("Test failed, expected error rate=%.2e, observed error rate=%.2e @%.1fdB for rate %d order %d", errorRate, observedErrorRate, ebN0, rate_U, order_U);
+            System.out.printf("Test failed, expected error rate=%.2e, observed error rate=%.2e @%.1fdB for rate %d order %d\n", errorRate, observedErrorRate, ebN0, rate_U, order_U);
             res = false;
         } else {
-            System.out.printf("Test passed, expected error rate=%.2e, observed error rate=%.2e @%.1fdB for rate %d order %d", errorRate, observedErrorRate, ebN0, rate_U, order_U);
+            System.out.printf("Test passed, expected error rate=%.2e, observed error rate=%.2e @%.1fdB for rate %d order %d\n", errorRate, observedErrorRate, ebN0, rate_U, order_U);
         }
         return res;
     }
 
     private long testConv(double ebN0, double bpskBitEnergy, double bpskVoltage) {
-        byte[] msg_U = new byte[(int)maxBlockLen_U];
+        byte[] msg_U = new byte[(int) maxBlockLen];
 
         long numErrors_U = 0;
 
         while(msgLen_U != 0) {
-            long blockLen_U = Long.compareUnsigned(maxBlockLen_U, msgLen_U) < 0 ? maxBlockLen_U : msgLen_U;
+            long blockLen_U = Long.compareUnsigned(maxBlockLen, msgLen_U) < 0 ? maxBlockLen : msgLen_U;
             msgLen_U -= blockLen_U;
 
             for(int j_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(j_U), blockLen_U) < 0; j_U++) {
                 msg_U[j_U] = (byte)(RANDOM.nextInt() % 256);
             }
 
-            resizeConvTestbench(blockLen_U);
+            resize(blockLen_U);
 
             ErrorSim.buildWhiteNoise(noise, enclen_U, ebN0, bpskBitEnergy);
             numErrors_U += testConvNoise(msg_U, blockLen_U, bpskVoltage);
@@ -79,17 +79,17 @@ public class ConvTestbench {
 
         Arrays.fill(msgOut_U, (byte) 0);
 
-        long decodeLen = conv.correctConvolutionalDecode(soft_U,enclen_U, msgOut_U);
+        long decodeLen = conv.correctConvolutionalDecodeSoft(soft_U,enclen_U, msgOut_U);
 
         if(decodeLen != nBytes_U) {
-            System.out.printf("Expected to decode %d bytes, decoded %d bytes instead", nBytes_U, decodeLen);
+            System.out.printf("Expected to decode %d bytes, decoded %d bytes instead\n", nBytes_U, decodeLen);
             return -1;
         }
 
         return (int) ErrorSim.distance(msg_U, msgOut_U, nBytes_U);
     }
 
-    public void resizeConvTestbench(long msgLen_U) {
+    public void resize(long msgLen_U) {
 
 
         if (msgOut_U != null) {

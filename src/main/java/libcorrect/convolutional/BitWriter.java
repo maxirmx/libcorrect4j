@@ -15,11 +15,11 @@ public class BitWriter {
 
     public BitWriter(byte[] bytes_U, long len_U) {
         if (bytes_U != null) {
-            bitWriterReconfigure(bytes_U, len_U);
+            reconfigure(bytes_U, len_U);
         }
     }
 
-    public void bitWriterReconfigure(byte[] bytes_U, long len_U) {
+    public void reconfigure(byte[] bytes_U, long len_U) {
         this.bytes_U = bytes_U;
         this.len_U = len_U;
 
@@ -28,14 +28,14 @@ public class BitWriter {
         byteIndex_U = 0;
     }
 
-    public void bitWriterWrite(byte val_U, int n_U) {
+    public void write(byte val_U, int n_U) {
         for (long j_U = 0; Long.compareUnsigned(j_U, Integer.toUnsignedLong(n_U)) < 0; j_U++) {
-            bitWriterWrite1(val_U);
+            write1(val_U);
             val_U = (byte) (Byte.toUnsignedInt(val_U) >> 1);
         }
     }
 
-    public void bitWriterWrite1(byte val_U) {
+    public void write1(byte val_U) {
         currentByte_U = (byte) (Byte.toUnsignedInt((byte) (Byte.toUnsignedInt(currentByte_U) | Byte.toUnsignedInt(val_U) & 1)));
         if (++currentByteLen_U == 8) {
             // 8 bits in a byte -- move to the next byte
@@ -47,7 +47,7 @@ public class BitWriter {
         }
     }
 
-    public void bitWriterWriteBitlist(byte[] l_U, long len_U) {
+    public void writeBitlist(byte[] l_U, long len_U) {
         int lIndex = 0;
         // first close the current byte
         // we might have been given too few elements to do that. be careful.
@@ -106,7 +106,7 @@ public class BitWriter {
         this.currentByteLen_U = (int) len_U;
     }
 
-    public void bitWriterWriteBitlistReversed(byte[] l_U, long len_U) {
+    public void writeBitlistReversed(byte[] l_U, long len_U) {
         int lIndex = 0;
         lIndex += (int) (len_U - 1);
 
@@ -168,7 +168,7 @@ public class BitWriter {
         this.currentByteLen_U = (int) len_U;
     }
 
-    public void bitWriterFlushByte() {
+    public void flushByte() {
         if (currentByteLen_U != 0) {
             currentByte_U = (byte) (Byte.toUnsignedInt(this.currentByte_U) << 8 - this.currentByteLen_U);
             bytes_U[byteIndex_U] = currentByte_U;
@@ -177,7 +177,7 @@ public class BitWriter {
         }
     }
 
-    public int bitWriterLength_U() {
+    public int length() {
         return byteIndex_U;
     }
 }

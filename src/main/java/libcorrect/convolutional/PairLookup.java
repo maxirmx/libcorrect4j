@@ -63,7 +63,7 @@ public class PairLookup {
         this.outputWidth_U = rate_U;
         this.distances_U = new int[this.outputsLen_U];
     }
-    public void pairLookupFillDistance(short[] distances_U) {
+    public void fillDistance(short[] distances_U) {
         for(int i_U = 1; Integer.compareUnsigned(i_U, this.outputsLen_U) < 0; i_U ++) {
             int concatOut_U = this.outputs_U[i_U];
             int i0_U = concatOut_U & this.outputMask_U;
