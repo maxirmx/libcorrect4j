@@ -44,7 +44,132 @@ public class CorrectReedSolomon {
     private Polynomial errorLocatorDerivative;
     private Polynomial[] initFromRootsScratch = new Polynomial[2];
     private boolean hasInitDecode;
+--
+    // coeff must be of size nroots + 1
+    // e.g. 2 roots (x + alpha)(x + alpha^2) yields a poly with 3 terms x^2 + g0*x + g1
+	private static PolynomialT reedSolomonBuildGenerator(FieldT field, int nroots_U, byte firstConsecutiveRoot_U, int rootGap_U, PolynomialT generator, byte[] roots_U) {
+		for(int i_U = 0; Integer.compareUnsigned(i_U, nroots_U) < 0; i_U++) {
+			roots_U[i_U] = field.getExp_U().get(Integer.remainderUnsigned(rootGap_U * (i_U + Byte.toUnsignedInt(firstConsecutiveRoot_U)), 255));
+		}		
+    return polynomialCreateFromRoots(field.copy(), nroots_U, roots_U);
 
+	}
+	public static C[] correctReedSolomonCreate(short primitivePolynomial_U, byte firstConsecutiveRoot_U, byte generatorRootGap_U, long numRoots_U) {  
+    		C[] rs = null;
+		rs[0].setField(fieldCreate(primitivePolynomial_U));
+		rs[0].setBlockLength_U(255);
+		rs[0].setMinDistance_U(numRoots_U);
+
+        rs[0].setMessageLength_U(rs[0].getBlockLength_U() - rs[0].getMinDistance_U());
+		rs[0].setFirstConsecutiveRoot_U(firstConsecutiveRoot_U);
+		rs[0].setGeneratorRootGap_U(generatorRootGap_U);
+		rs[0].setGeneratorRoots_U(new String8(true, (int)rs[0].getMinDistance_U()));
+
+        rs[0].setGeneratorRootGap_U(generatorRootGap_U);
+		rs[0].setGeneratorRoots_U(new String8(true, (int)rs[0].getMinDistance_U()));
+
+        rs[0].setEncodedPolynomial(polynomialCreate(rs[0].getBlockLength_U() - 1));
+		rs[0].setEncodedRemainder(polynomialCreate(rs[0].getBlockLength_U() - 1));
+
+        return rs[0];
+    }
+   
+    	public static void correctReedSolomonDebugPrint(C[] rs) {
+    		for(int i_U = 0; Integer.compareUnsigned(i_U, 256) < 0; i_U++) {
+			System.out.printf("%3d  %3d    %3d  %3d\n", i_U, Byte.toUnsignedInt(rs[0].getField().getExp_U().get(i_U)), i_U, Byte.toUnsignedInt(rs[0].getField().getLog_U().get(i_U)));
+		}
+   		System.out.println();
+            
+		System.out.print("roots: ");
+
+            for(int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), rs[0].getMinDistance_U()) < 0; i_U++) {
+			System.out.print(Byte.toUnsignedInt(rs[0].getGeneratorRoots_U().get(i_U)));
+			if(Long.compareUnsigned(Integer.toUnsignedLong(i_U), rs[0].getMinDistance_U() - 1) < 0) {
+				System.out.print(", ");
+			}
+		}
+            
+   		System.out.println();
+   		System.out.println();
+       		System.out.print("generator: ");
+		for(int i_U = 0; Integer.compareUnsigned(i_U, rs[0].getGenerator().getOrder_U() + 1) < 0; i_U++) {
+			System.out.print(Byte.toUnsignedInt(rs[0].getGenerator().getCoeff_U().get(i_U)) + "*x^" + i_U);
+			if(Integer.compareUnsigned(i_U, rs[0].getGenerator().getOrder_U()) < 0) {
+				System.out.print(" + ");
+			}
+		}
+
+   		System.out.println();
+   		System.out.println();
+
+            		System.out.print("generator (alpha format): ");
+		for(int i_U = rs[0].getGenerator().getOrder_U() + 1; Integer.compareUnsigned(i_U, 0) > 0; i_U--) {
+			System.out.print("alpha^" + Byte.toUnsignedInt(rs[0].getField().getLog_U().get(Byte.toUnsignedInt(rs[0].getGenerator().getCoeff_U().get(i_U - 1)))) + "*x^" + (i_U - 1));
+			if(Integer.compareUnsigned(i_U, 1) > 0) {
+				System.out.print(" + ");
+			}
+		}
+
+        System.out.println("\n");
+
+        		System.out.print("remainder: ");
+		boolean hasPrinted = false;
+		for(int i_U = 0; Integer.compareUnsigned(i_U, rs[0].getEncodedRemainder().getOrder_U() + 1) < 0; i_U++) {
+			if(rs[0].getEncodedRemainder().getCoeff_U().get(i_U) == 0) {
+				continue;
+			}
+			if(hasPrinted) {
+				System.out.print(" + ");
+			}
+            hasPrinted = true;
+			System.out.print(Byte.toUnsignedInt(rs[0].getErrorLocator().getCoeff_U().get(i_U)) + "*x^" + i_U);
+		}
+
+            System.out.println("\n");
+
+		System.out.print("syndromes: ");
+
+            for(int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), rs[0].getMinDistance_U()) < 0; i_U++) {
+			System.out.print(Byte.toUnsignedInt(rs[0].getSyndromes_U().get(i_U)));
+			if(Long.compareUnsigned(Integer.toUnsignedLong(i_U), rs[0].getMinDistance_U() - 1) < 0) {
+				System.out.print(", ");
+			}
+		}
+
+        
+            		System.out.println("\n");
+
+		System.out.println("numerrors: " + rs[0].getErrorLocator().getOrder_U() + "\n");
+
+            		System.out.print("error locator: ");
+		hasPrinted = false;
+		for(int i_U = 0; Integer.compareUnsigned(i_U, rs[0].getErrorLocator().getOrder_U() + 1) < 0; i_U++) {
+			if(rs[0].getErrorLocator().getCoeff_U().get(i_U) == 0) {
+				continue;
+			}
+					if(hasPrinted) {
+				System.out.print(" + ");
+			}
+			hasPrinted = true;
+			System.out.print(Byte.toUnsignedInt(rs[0].getErrorLocator().getCoeff_U().get(i_U)) + "*x^" + i_U);
+		}
+
+    		System.out.println("\n");
+        		System.out.print("error roots: ");
+		for(int i_U = 0; Integer.compareUnsigned(i_U, rs[0].getErrorLocator().getOrder_U()) < 0; i_U++) {
+			System.out.print(polynomialEval(rs[0].getField().copy(), rs[0].getErrorLocator().copy(), rs[0].getErrorRoots_U().get(i_U)) + "@" + Byte.toUnsignedInt(rs[0].getErrorRoots_U().get(i_U)));
+			if(Integer.compareUnsigned(i_U, rs[0].getErrorLocator().getOrder_U() - 1) < 0) {
+				System.out.print(", ");
+			}
+		}
+    		System.out.println("\n");
+    
+            
+        }
+
+  --  
+    
+    
     public long correctReedSolomonEncode(byte[] msg_U, long msgLength_U, byte[] encoded_U) {
         if (Long.compareUnsigned(msgLength_U, messageLength_U) > 0) {
             return -1;
