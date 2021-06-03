@@ -12,18 +12,18 @@ import static java.lang.Integer.bitCount;
 public class ErrorSim {
     public final static Random RANDOM = new Random(1);
 
-    public static long distance(byte[] a_U, byte[] b_U, long len_U) {
-        long dist_U = 0;
-        for(long i_U = 0; Long.compareUnsigned(i_U, len_U) < 0; i_U++) {
-            if(a_U[(int)i_U] != b_U[(int)i_U]) {
+    public static long distance(byte[] a, byte[] b, long len) {
+        long dist = 0;
+        for(long i = 0; Long.compareUnsigned(i, len) < 0; i++) {
+            if(a[(int)i] != b[(int)i]) {
             }
-            dist_U += bitCount(Byte.toUnsignedInt(a_U[(int)i_U]) ^ Byte.toUnsignedInt(b_U[(int)i_U]));
+            dist += bitCount(Byte.toUnsignedInt(a[(int)i]) ^ Byte.toUnsignedInt(b[(int)i]));
         }
-        return dist_U;
+        return dist;
     }
 
-    public static void gaussian(double[] res, long nRes_U, double sigma) {
-        for(long i_U = 0; Long.compareUnsigned(i_U, nRes_U) < 0; i_U += 2) {
+    public static void gaussian(double[] res, long nRes, double sigma) {
+        for(long i = 0; Long.compareUnsigned(i, nRes) < 0; i += 2) {
             // compute using polar method of box muller
             double s, u, v;
             while(true) {
@@ -38,60 +38,61 @@ public class ErrorSim {
 
             double base = Math.sqrt((-2.0 * Math.log(s)) / s);
             double z0 = u * base;
-            res[(int)i_U] = z0 * sigma;
+            res[(int)i] = z0 * sigma;
 
-            if(Long.compareUnsigned(i_U + 1, nRes_U) < 0) {
+            if(Long.compareUnsigned(i + 1, nRes) < 0) {
                 double z1 = v * base;
-                res[(int)(i_U + 1)] = z1 * sigma;
+                res[(int)(i + 1)] = z1 * sigma;
             }
         }
     }
 
-    public static void encodeBpsk(byte[] msg_U, double[] voltages, long nSyms_U, double bpskVoltage) {
-        byte mask_U = (byte)0x80;
-        for(long i_U = 0; Long.compareUnsigned(i_U, nSyms_U) < 0; i_U++) {
-            voltages[(int)i_U] = (Byte.toUnsignedInt(msg_U[(int)Long.divideUnsigned(i_U, 8)]) & Byte.toUnsignedInt(mask_U)) != 0 ? bpskVoltage : -bpskVoltage;
-            mask_U = (byte)(Byte.toUnsignedInt(mask_U) >> 1);
-            if(mask_U == 0) {
-                mask_U = (byte)0x80;
+    public static void encodeBpsk(byte[] msg, double[] voltages, long nSyms, double bpskVoltage) {
+        byte mask = (byte)0x80;
+        for(long i = 0; Long.compareUnsigned(i, nSyms) < 0; i++) {
+            voltages[(int)i] = (Byte.toUnsignedInt(msg[(int)Long.divideUnsigned(i, 8)]) & Byte.toUnsignedInt(mask)) != 0 ? bpskVoltage : -bpskVoltage;
+            mask = (byte)(Byte.toUnsignedInt(mask) >> 1);
+            if(mask == 0) {
+                mask = (byte)0x80;
+            }
+
+        }
+    }
+
+    public static void byte2bit(byte[] bytes, byte[] bits, long nBits) {
+        byte cmask = (byte)0x80;
+        for(long i = 0; Long.compareUnsigned(i, nBits) < 0; i++) {
+            bits[(int)i] = (byte)((Byte.toUnsignedInt(bytes[(int)Long.divideUnsigned(i, 8)]) & Byte.toUnsignedInt(cmask)) != 0 ? 255 : 0);
+            cmask = (byte)(Byte.toUnsignedInt(cmask) >> 1);
+            if(cmask == 0) {
+                cmask = (byte)0x80;
             }
         }
     }
 
-    public static void byte2bit(byte[] bytes_U, byte[] bits_U, long nBits_U) {
-        byte cmask_U = (byte)0x80;
-        for(long i_U = 0; Long.compareUnsigned(i_U, nBits_U) < 0; i_U++) {
-            bits_U[(int)i_U] = (byte)((Byte.toUnsignedInt(bytes_U[(int)Long.divideUnsigned(i_U, 8)]) & Byte.toUnsignedInt(cmask_U)) != 0 ? 255 : 0);
-            cmask_U = (byte)(Byte.toUnsignedInt(cmask_U) >> 1);
-            if(cmask_U == 0) {
-                cmask_U = (byte)0x80;
-            }
-        }
-    }
-
-    public static void decodeBpsk(byte[] soft_U, byte[] msg_U, long nSyms_U) {
-        byte mask_U = (byte)0x80;
-        for(long i_U = 0; Long.compareUnsigned(i_U, nSyms_U) < 0; i_U++) {
-            byte bit_U = (byte)(Byte.toUnsignedInt(soft_U[(int)i_U]) > 127 ? 1 : 0);
+    public static void decodeBpsk(byte[] soft, byte[] msg, long nSyms) {
+        byte mask = (byte)0x80;
+        for(long i_U = 0; Long.compareUnsigned(i_U, nSyms) < 0; i_U++) {
+            byte bit_U = (byte)(Byte.toUnsignedInt(soft[(int)i_U]) > 127 ? 1 : 0);
             if(bit_U != 0) {
-                msg_U[(int)Long.divideUnsigned(i_U, 8)] |= mask_U;
+                msg[(int)Long.divideUnsigned(i_U, 8)] |= mask;
             }
-            mask_U = (byte)(Byte.toUnsignedInt(mask_U) >> 1);
-            if(mask_U == 0) {
-                mask_U = (byte)0x80;
+            mask = (byte)(Byte.toUnsignedInt(mask) >> 1);
+            if(mask == 0) {
+                mask = (byte)0x80;
             }
         }
     }
 
-    public static void decodeBpskSoft(double[] voltages, byte[] soft_U, long nSyms_U, double bpskVoltage) {
-        for(long i_U = 0; Long.compareUnsigned(i_U, nSyms_U) < 0; i_U++) {
-            double rel = voltages[(int)i_U] / bpskVoltage;
+    public static void decodeBpskSoft(double[] voltages, byte[] soft, long nSyms, double bpskVoltage) {
+        for(long i = 0; Long.compareUnsigned(i, nSyms) < 0; i++) {
+            double rel = voltages[(int)i] / bpskVoltage;
             if(rel > 1) {
-                soft_U[(int)i_U] = (byte)255;
+                soft[(int)i] = (byte)255;
             } else if(rel < -1) {
-                soft_U[(int)i_U] = (byte)0;
+                soft[(int)i] = (byte)0;
             } else {
-                soft_U[(int)i_U] = (byte)(127.5 + 127.5 * rel);
+                soft[(int)i] = (byte)(127.5 + 127.5 * rel);
             }
         }
     }
@@ -112,14 +113,14 @@ public class ErrorSim {
         return Math.sqrt(bpskBitEnergy / (2.0 * ebN0Amp));
     }
 
-    public static void buildWhiteNoise(double[] noise, long nSyms_U, double ebN0, double bpskBitEnergy) {
+    public static void buildWhiteNoise(double[] noise, long nSyms, double ebN0, double bpskBitEnergy) {
         double sigma = sigmaForEbN0(ebN0, bpskBitEnergy);
-        gaussian(noise, nSyms_U, sigma);
+        gaussian(noise, nSyms, sigma);
     }
 
-    public static void addWhiteNoise(double[] signal, double[] noise, long nSyms_U) {
+    public static void addWhiteNoise(double[] signal, double[] noise, long nSyms) {
         double sqrt2 = Math.sqrt(2);
-        for(long i_U = 0; Long.compareUnsigned(i_U, nSyms_U) < 0; i_U++) {
+        for(long i = 0; Long.compareUnsigned(i, nSyms) < 0; i++) {
             // we want to add the noise in to the signal
             // but we can't add them directly, because they're expressed as magnitudes
             //   and the signal is real valued while the noise is complex valued
@@ -129,7 +130,7 @@ public class ErrorSim {
             // that means that the magnitude we have here is sqrt(2) * the real valued portion
             // so, we'll divide by sqrt(2)
             // (we are effectively throwing away the complex portion)
-            signal[(int)i_U] = signal[(int)i_U] + noise[(int)i_U] / sqrt2;
+            signal[(int)i] = signal[(int)i] + noise[(int)i] / sqrt2;
         }
     }
 

@@ -29,12 +29,12 @@ public class ErrorBuffer {
         this.index = 0;
     }
 
-    public void errorBufferReset() {
+    public void reset() {
         Arrays.fill(errors_U[0], (short)0);
         Arrays.fill(errors_U[1], (short)0);
         index = 0;
     }
-    public void errorBufferSwap() {
+    public void swap() {
         index = (index+1)%2;
     }
     public short getReadError(int i) {

@@ -58,16 +58,16 @@ public class HistoryBuffer {
         this.renormalizeInterval_U = renormalizeInterval_U;
     }
 
-    public void historyBufferReset() {
+    public void reset() {
         len_U = 0;
         index_U = 0;
     }
 
-    public byte[] historyBufferGetSlice() {
+    public byte[] getSlice() {
         return history_U[index_U];
     }
 
-    public int historyBufferSearch(short[] distances_U, int searchEvery_U) {
+    public int search(short[] distances_U, int searchEvery_U) {
         int bestpath_U = 0;
         int leasterror_U = Integer.MAX_VALUE;
         // search for a state with the least error
@@ -80,21 +80,21 @@ public class HistoryBuffer {
         return bestpath_U;
     }
 
-    public void historyBufferRenormalize(short[] distances_U, int minRegister_U) {
+    public void renormalize(short[] distances_U, int minRegister_U) {
         short minDistance_U = distances_U[minRegister_U];
-        for(int i_U = 0; Integer.compareUnsigned(i_U, numStates_U) < 0; i_U++) {
-            distances_U[i_U] = (short)(Short.toUnsignedInt(distances_U[i_U]) - Short.toUnsignedInt(minDistance_U));
+        for(int i = 0; Integer.compareUnsigned(i, numStates_U) < 0; i++) {
+            distances_U[i] = (short)(Short.toUnsignedInt(distances_U[i]) - Short.toUnsignedInt(minDistance_U));
         }
     }
 
-    public void historyBufferTraceback(int bestpath_U,
-                                       int minTracebackLength_U,
-                                       BitWriter output) {
+    public void traceback(int bestpath_U,
+                          int minTracebackLength_U,
+                          BitWriter output) {
         int fetchedIndex_U = 0;
         int highbit_U = this.highbit_U;
         int index_U = this.index_U;
         int cap_U = this.cap_U;
-        for(int j_U = 0; Integer.compareUnsigned(j_U, minTracebackLength_U) < 0; j_U++) {
+        for(int j = 0; Integer.compareUnsigned(j, minTracebackLength_U) < 0; j++) {
             if(index_U == 0) {
                 index_U = cap_U - 1;
             } else {
@@ -116,7 +116,7 @@ public class HistoryBuffer {
             prefetchIndex_U--;
         }
         int len_U = this.len_U;
-        for(int j_U = minTracebackLength_U; Integer.compareUnsigned(j_U, len_U) < 0; j_U++) {
+        for(int j = minTracebackLength_U; Integer.compareUnsigned(j, len_U) < 0; j++) {
             index_U = prefetchIndex_U;
             if(prefetchIndex_U == 0) {
                 prefetchIndex_U = cap_U - 1;
@@ -135,10 +135,10 @@ public class HistoryBuffer {
             this.fetched_U[fetchedIndex_U]=(byte)(pathbit_U != 0 ? 1 : 0);
             fetchedIndex_U++;
         }
-        output.bitWriterWriteBitlistReversed(this.fetched_U, fetchedIndex_U);
+        output.writeBitlistReversed(this.fetched_U, fetchedIndex_U);
         this.len_U -= fetchedIndex_U;
     }
-    public void historyBufferProcessSkip(short[] distances_U, BitWriter output, int skip_U) {
+    public void processSkip(short[] distances_U, BitWriter output, int skip_U) {
         this.index_U++;
         if(this.index_U == this.cap_U) {
             this.index_U = 0;
@@ -157,25 +157,25 @@ public class HistoryBuffer {
 
         if(this.renormalizeCounter_U == this.renormalizeInterval_U) {
             this.renormalizeCounter_U = 0;
-            int bestpath_U = historyBufferSearch(distances_U, skip_U);
-            historyBufferRenormalize(distances_U, bestpath_U);
+            int bestpath_U = search(distances_U, skip_U);
+            renormalize(distances_U, bestpath_U);
             if(this.len_U == this.cap_U) {
                 // reuse the bestpath found for renormalizing
-                historyBufferTraceback(bestpath_U, this.minTracebackLength_U, output);
+                traceback(bestpath_U, this.minTracebackLength_U, output);
             }
         } else if(this.len_U == this.cap_U) {
             // not renormalizing, find the bestpath here
-            int bestpath_U = historyBufferSearch(distances_U, skip_U);
-            historyBufferTraceback(bestpath_U, this.minTracebackLength_U, output);
+            int bestpath_U = search(distances_U, skip_U);
+            traceback(bestpath_U, this.minTracebackLength_U, output);
         }
     }
 
-    public void historyBufferProcess(short[] distances_U, BitWriter output) {
-        historyBufferProcessSkip(distances_U, output, 1);
+    public void process(short[] distances_U, BitWriter output) {
+        processSkip(distances_U, output, 1);
     }
 
-    public void historyBufferFlush(BitWriter output) {
-        historyBufferTraceback(0, 0, output);
+    public void flush(BitWriter output) {
+        traceback(0, 0, output);
     }
 
 
