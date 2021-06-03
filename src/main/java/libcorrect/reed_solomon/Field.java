@@ -30,12 +30,12 @@ public class Field {
         // as 8 bits packed into one byte
 
         short element_U = 1;
-        for (short i_U = 1; i_U < 512; i_U++) {
+        for (short i = 1; i < 512; i++) {
             element_U = (short) (Short.toUnsignedInt(element_U) * 2);
             element_U = (short) (Short.toUnsignedInt(element_U) > 255 ? Short.toUnsignedInt(element_U) ^ Short.toUnsignedInt(primitivePoly_U) : Short.toUnsignedInt(element_U));
-            exp_U[Short.toUnsignedInt(i_U)] = (byte) element_U;
-            if (Short.toUnsignedInt(i_U) < 256) {
-                log_U[Short.toUnsignedInt(element_U)] =(byte) i_U;
+            exp_U[Short.toUnsignedInt(i)] = (byte) element_U;
+            if (Short.toUnsignedInt(i) < 256) {
+                log_U[Short.toUnsignedInt(element_U)] =(byte) i;
             }
         }
     }

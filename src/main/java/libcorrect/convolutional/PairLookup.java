@@ -25,18 +25,6 @@ public class PairLookup {
     }
  */
 
-    public static void fillTable(int rate_U, int order_U, short[] poly_U, int[] table_U) {
-        for(int i = 0; Integer.compareUnsigned(i, 1 << order_U) < 0; i++) {
-            int out_U = 0;
-            int mask_U = 1;
-            for(int j_U = 0; Integer.compareUnsigned(j_U, rate_U) < 0; j_U++) {
-                out_U |= Integer.bitCount(i & Short.toUnsignedInt(poly_U[j_U])) % 2 != 0 ? mask_U : 0;
-                mask_U <<= 1;
-            }
-            table_U[i] = out_U;
-        }
-    }
-
     public  PairLookup (int rate_U, int order_U, int[] table_U) {
         this.keys_U = new int[1 << (order_U - 1)];
         this.outputs_U = new int[1 << (rate_U * 2)];

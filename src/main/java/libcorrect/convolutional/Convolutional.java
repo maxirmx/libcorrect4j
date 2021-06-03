@@ -10,485 +10,479 @@
 package libcorrect.convolutional;
 
 
+import java.util.Arrays;
+
 import static libcorrect.convolutional.Metric.distance;
 
 public class Convolutional {
-	// Convolutional Codes
-	// Convolutional polynomials are 16 bits wide
-	public final static short[] correctConvR126Polynomial = {073, 061};
-	public final static short[] correctConvR127Polynomial = {0161, 0127};
-	public final static short[] correctConvR128Polynomial = {0225, 0373};
-	public final static short[] correctConvR129Polynomial = {0767, 0545};
-	public final static short[] correctConvR136Polynomial = {053, 075, 047};
-	public final static short[] correctConvR137Polynomial = {0137, 0153, 0121};
-	public final static short[] correctConvR138Polynomial = {0333, 0257, 0351};
-	public final static short[] correctConvR139Polynomial = {0417, 0627, 0675};
+    // Convolutional Codes
+    // Convolutional polynomials are 16 bits wide
+    public final static short[] correctConvR126Polynomial = {073, 061};
+    public final static short[] correctConvR127Polynomial = {0161, 0127};
+    public final static short[] correctConvR128Polynomial = {0225, 0373};
+    public final static short[] correctConvR129Polynomial = {0767, 0545};
+    public final static short[] correctConvR136Polynomial = {053, 075, 047};
+    public final static short[] correctConvR137Polynomial = {0137, 0153, 0121};
+    public final static short[] correctConvR138Polynomial = {0333, 0257, 0351};
+    public final static short[] correctConvR139Polynomial = {0417, 0627, 0675};
 
-	public final static int CORRECT_SOFT_LINEAR = 0;
-	public final static int CORRECT_SOFT_QUADRATIC = CORRECT_SOFT_LINEAR + 1;
+    public final static int CORRECT_SOFT_LINEAR = 0;
+    public final static int CORRECT_SOFT_QUADRATIC = CORRECT_SOFT_LINEAR + 1;
 
-	 // Maximum of unsigned integral types.
-	private final static int UINT8_MAX = 255;
-	private final static int UINT16_MAX = 65_535;
-	private final static byte softMax_U = (byte)UINT8_MAX;
-	private final static short distanceMax_U = (short)UINT16_MAX;
+    // Maximum of unsigned integral types.
+    private final static int UINT8_MAX = 255;
+    private final static int UINT16_MAX = 65_535;
+    private final static byte SOFT_MAX = (byte) UINT8_MAX;
+    private final static short DISTANCE_MAX = (short) UINT16_MAX;
 
 
+    private final int[] table_U;                /* size 2**order */
+    private final int rate_U;                   /* e.g. 2, 3...  */
+    private final int order_U;                  /* e.g. 7, 9...	 */
+    private final int numstates_U;              /* 2**order 	 */
+    private final BitWriter bitWriter;
+    private final BitReader bitReader;
 
-	private final int[] table_U;              	/* size 2**order */
-	private final int rate_U;                	/* e.g. 2, 3...  */
-  	private final int order_U;         		    /* e.g. 7, 9...	 */
-  	private final int numstates_U;              /* 2**order 	 */
-  	private final BitWriter bitWriter;
-  	private final BitReader bitReader;
-  
-  	private boolean hasInitDecode;
-  	private short[]   distances_U;
-  	private PairLookup pairLookup;
-  	private int softMeasurement;
-  	private HistoryBuffer historyBuffer;
-  	private ErrorBuffer errorBuffer;
+    private boolean hasInitDecode;
+    private short[] distances_U;
+    private PairLookup pairLookup;
+    private int softMeasurement;
+    private HistoryBuffer historyBuffer;
+    private ErrorBuffer errorBuffer;
 
-	/**
-	 *  correct_convolutional_create allocates and initializes an encoder/decoder for
-	 * a convolutional code with the given parameters. This function expects that
-	 * poly will contain inv_rate elements. E.g., to create a conv. code instance
-	 * with rate 1/2, order 7 and polynomials 0161, 0127, call
-	 * correct_convolutional_create(2, 7, []correct_convolutional_polynomial_t{0161, 0127});
-	 *
-	 * If this call is successful, it returns a non-NULL pointer.
-	 */
-public Convolutional(int rate_U, int order_U, short[] poly_U) throws IllegalArgumentException {
-		if(Integer.compareUnsigned(order_U, Integer.SIZE) > 0) {
-       // XXX turn this into an error code
-        // printf("order must be smaller than 8 * sizeof(shift_register_t)\n");
-			throw new IllegalArgumentException("Convolutional: order must be smaller than 8 * sizeof(shift_register_t)");
-		}
-		if(Long.compareUnsigned(rate_U, 2) < 0) {
-			// XXX turn this into an error code
-			// printf("rate must be 2 or greater\n");
-			throw new IllegalArgumentException("Convolutional: rate must be 2 or greater");
-		}
-		this.order_U = order_U;
-		this.rate_U = rate_U;
-		this.numstates_U = (1 << order_U);
-		
-		this.table_U = new int [1 << order_U];
-		PairLookup.fillTable(this.rate_U, this.order_U, poly_U, this.table_U);
+    /**
+     * Convolutional encoder/decoder constructor
+     * Allocates and initializes an encoder/decoder for
+     * a convolutional code with the given parameters. This function expects that
+     * poly will contain inv_rate elements. E.g., to create a conv. code instance
+     * with rate 1/2, order 7 and polynomials 0161, 0127, call
+     * new Convolutional (2, 7, {0161, 0127});
+     *
+     * @param r      inverted rate
+     * @param o     order
+     * @param p      polynomials
+     * @throws IllegalArgumentException if requested encoder/decoder cannot be create
+     */
+    public Convolutional(int r, int o, short[] p) throws IllegalArgumentException {
+        if (Integer.compareUnsigned(o, Integer.SIZE) > 0) {
+            // XXX turn this into an error code
+            // printf("order must be smaller than 8 * sizeof(shift_register_t)\n");
+            throw new IllegalArgumentException("Convolutional: order must be smaller than 8 * sizeof(shift_register_t)");
+        }
+        if (Long.compareUnsigned(r, 2) < 0) {
+            // XXX turn this into an error code
+            // printf("rate must be 2 or greater\n");
+            throw new IllegalArgumentException("Convolutional: rate must be 2 or greater");
+        }
+        order_U = o;
+        rate_U = r;
+        numstates_U = (1 << o);
 
-		bitWriter = new BitWriter(null,0);
-		bitReader = new BitReader(null,0);
-	
-		this.hasInitDecode = false;
-	}
-	/**
-	 * correct_convolutional_encode_len returns the number of *bits*
-	 * in a msg_len of given size, in *bytes*. In order to convert
-	 * this returned length to bytes, save the result of the length
-	 * modulo 8. If it's nonzero, then the length in bytes is
-	 * length/8 + 1. If it is zero, then the length is just
-	 * length/8.
-	 */
+        table_U = new int[1 << o];
+        fillTable(rate_U, order_U, p);
 
-	public long encodeLen(long msgLen_U) {
-		long msgbits_U = 8 * msgLen_U;
-		long encodedbits_U = rate_U * (msgbits_U + order_U + 1);
-		return encodedbits_U;
-	}
+        bitWriter = new BitWriter(null, 0);
+        bitReader = new BitReader(null, 0);
 
-	/**
-	 * correct_convolutional_encode uses the given conv instance to
-	 * encode a block of data and write it to encoded. The length of
-	 * encoded must be long enough to hold the resulting encoded length,
-	 * which can be calculated by calling correct_convolutional_encode_len.
-	 * However, this length should first be converted to bytes, as that
-	 * function returns the length in bits.
-	 *
-	 * This function returns the number of bits written to encoded. If
-	 * this is not an exact multiple of 8, then it occupies an additional
-	 * byte.
-	 */
+        hasInitDecode = false;
+    }
 
-	// shift in most significant bit every time, one byte at a time
-	// shift register takes most recent bit on right, shifts left
-	// poly is written in same order, just & mask message w/ poly
+    /**
+     * encodeLen returns the number of *bits*
+     * in a msgLen of given size, in *bytes*. In order to convert
+     * this returned length to bytes, save the result of the length
+     * modulo 8. If it's nonzero, then the length in bytes is
+     * length/8 + 1. If it is zero, then the length is just
+     * length/8.
+     * @param msgLen        the message length
+     * @return              the number of *bits* in *bytes*
+     */
+    public long encodeLen(long msgLen) {
+        long msgbits = 8 * msgLen;
+        long encodedbits = rate_U * (msgbits + order_U + 1);
+        return encodedbits;
+    }
 
-	// assume that encoded length is long enough?
-	public long encode(byte[] msg_U, long msgLen_U, byte[] encoded_U) {
+    /**
+     * Encode a block of data
+     * @param msg   a message to encode
+     * @return      encoded message
+     */
 
-		// convolutional code convolves filter coefficients, given by
-		//     the polynomial, with some history from our message.
-		//     the history is stored as single subsequent bits in shiftregister
-		int shiftregister_U = 0;
+    // assume that encoded length is long enough?
+    public byte[] encode(byte[] msg) {
+        int msgLen = msg.length;
 
-		// shiftmask is the shiftregister bit mask that removes bits
-		//      that extend beyond order
-		// e.g. if order is 7, then remove the 8th bit and beyond
-		int shiftmask_U = (1 << order_U) - 1;
+        // convolutional code convolves filter coefficients, given by
+        //     the polynomial, with some history from our message.
+        //     the history is stored as single subsequent bits in shiftregister
 
-		long encodedLenBits_U = encodeLen(msgLen_U);
-		long encodedLen_U = Long.remainderUnsigned(encodedLenBits_U, 8) != 0 ?
-									Long.divideUnsigned(encodedLenBits_U, 8) + 1 :
-									Long.divideUnsigned(encodedLenBits_U, 8);
-		bitWriter.reconfigure(encoded_U, encodedLen_U);
-		bitReader.reconfigure(msg_U, msgLen_U);
+        // shift in most significant bit every time, one byte at a time
+        // shift register takes most recent bit on right, shifts left
+        // poly is written in same order, just & mask message w/ poly
+        int shiftregister_U = 0;
 
-		for(long i_U = 0; Long.compareUnsigned(i_U, 8 * msgLen_U) < 0; i_U++) {
-			// shiftregister has oldest bits on left, newest on right
-			shiftregister_U <<= 1;
-			shiftregister_U |= bitReader.read(1);
-			shiftregister_U &= shiftmask_U;
-			// shift most significant bit from byte and move down one bit at a time
+        // shiftmask is the shiftregister bit mask that removes bits
+        //      that extend beyond order
+        // e.g. if order is 7, then remove the 8th bit and beyond
+        int shiftmask_U = (1 << order_U) - 1;
 
-			// we do direct lookup of our convolutional output here
-			// all of the bits from this convolution are stored in this row
-			int out_U = table_U[shiftregister_U];
-			bitWriter.write((byte)out_U, rate_U);
-		}
-		// now flush the shiftregister
-		// this is simply running the loop as above but without any new inputs
-		// or rather, the new input string is all 0s
-		for(long i_U = 0; Long.compareUnsigned(i_U, order_U + 1) < 0; i_U++) {
-			shiftregister_U <<= 1;
-			shiftregister_U &= shiftmask_U;
-			int out_U = table_U[shiftregister_U];
-			bitWriter.write((byte) out_U, rate_U);
-		}
+        long encodedLenBits = encodeLen(msgLen);
+        int encodedLen = (int) (Long.remainderUnsigned(encodedLenBits, 8) != 0 ?
+                        Long.divideUnsigned(encodedLenBits, 8) + 1 :
+                        Long.divideUnsigned(encodedLenBits, 8));
+        byte[] encoded = new byte[encodedLen];
+        bitWriter.reconfigure(encoded, encodedLen);
+        bitReader.reconfigure(msg, msgLen);
 
-		// 0-fill any remaining bits on our final byte
-		bitWriter.flushByte();
+        for (long i = 0; Long.compareUnsigned(i, 8 * msgLen) < 0; i++) {
+            // shiftregister has oldest bits on left, newest on right
+            shiftregister_U <<= 1;
+            shiftregister_U |= bitReader.read(1);
+            shiftregister_U &= shiftmask_U;
+            // shift most significant bit from byte and move down one bit at a time
 
-		return encodedLenBits_U;
-	}
-	public void decodePrintIter(int iter_U, int winnerIndex_U) {
-		if(Integer.compareUnsigned(iter_U, 2_220) < 0) {
-			return;
-		}
-		System.out.println("iteration: " + iter_U);
-		System.out.println("errors:");
-		for(int i_U = 0; Integer.compareUnsigned(i_U, Integer.divideUnsigned(numstates_U, 2)) < 0; i_U++) {
-			System.out.printf("%2d: %d\n", i_U, Short.toUnsignedInt(errorBuffer.getWriteError(i_U)));
-		}
-		System.out.println();
-		System.out.println("history:");
-		for(int i = 0; Integer.compareUnsigned(i, Integer.divideUnsigned(numstates_U, 2)) < 0; i++) {
-			System.out.printf("%2d: ", i);
-			for(int j = 0; Integer.compareUnsigned(j, winnerIndex_U) <= 0; j++) {
-				System.out.printf("%d", historyBuffer.getHistory(j,i) != 0 ? 1 : 0);
-			}
-			System.out.println();
-		}
-		System.out.println();
-	}
+            // we do direct lookup of our convolutional output here
+            // all of the bits from this convolution are stored in this row
+            int out_U = table_U[shiftregister_U];
+            bitWriter.write((byte) out_U, rate_U);
+        }
+        // now flush the shiftregister
+        // this is simply running the loop as above but without any new inputs
+        // or rather, the new input string is all 0s
+        for (long i = 0; Long.compareUnsigned(i, order_U + 1) < 0; i++) {
+            shiftregister_U <<= 1;
+            shiftregister_U &= shiftmask_U;
+            int out_U = table_U[shiftregister_U];
+            bitWriter.write((byte) out_U, rate_U);
+        }
 
-	private void decodeWarmup(int sets_U, byte[] soft_U) {
-		// first phase: load shiftregister up from 0 (order goes from 1 to conv->order)
-		// we are building up error metrics for the first order bits
-		for(int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), this.order_U - 1) < 0 && Integer.compareUnsigned(i_U, sets_U) < 0; i_U++) {
-			// peel off rate bits from encoded to recover the same `out` as in the encoding process
-			// the difference being that this `out` will have the channel noise/errors applied
-			int out_U=0;
-			if(soft_U == null) {
-				out_U = bitReader.read(this.rate_U);
-			}
-			// walk all of the state we have so far
-			for(int j_U = 0; Integer.compareUnsigned(j_U, 1 << i_U + 1) < 0; j_U += 1) {
-				int last_U = (int)(j_U >>> 1);
-				short dist_U;
+        // 0-fill any remaining bits on our final byte
+        bitWriter.flushByte();
 
-				if(soft_U != null) {
-					if (softMeasurement == CORRECT_SOFT_LINEAR) {
-						dist_U = Metric.softDistanceLinear(table_U[j_U], soft_U, this.rate_U, i_U * this.rate_U);
-					} else {
-						dist_U = Metric.softDistanceQuadratic(table_U[j_U], soft_U, this.rate_U, i_U * this.rate_U);
-					}
-				} else {
-					dist_U = distance(table_U[(int) j_U],out_U);
-				}
-				errorBuffer.setWriteError(j_U, (short) (dist_U + errorBuffer.getReadError(last_U)));
-			}
-			errorBuffer.swap();
-		}
-	}
-	private void decodeInner(int sets_U, byte[] soft_U) {
-		int highbit_U = 1 << order_U - 1;
-		for(int i_U = order_U - 1; Long.compareUnsigned(Integer.toUnsignedLong(i_U), Integer.toUnsignedLong(sets_U) - order_U + 1) < 0; i_U++) {
-			// lasterrors are the aggregate bit errors for the states of shiftregister for the previous
-			// time slice
-			if(soft_U != null) {
-				if(softMeasurement == CORRECT_SOFT_LINEAR) {
-					for(int j_U = 0; Integer.compareUnsigned(j_U, 1 << rate_U) < 0; j_U++) {
-						distances_U[j_U] = Metric.softDistanceLinear(j_U, soft_U, rate_U,i_U * rate_U);
-					}
-				} else {
-					for(int j_U = 0; Integer.compareUnsigned(j_U, 1 << rate_U) < 0; j_U++) {
-						distances_U[j_U] = (short)Metric.softDistanceQuadratic(j_U, soft_U, rate_U,i_U * rate_U);
-					}
-				}
-			} else {
-				int out_U = bitReader.read(rate_U);
-				for (int i2_U = 0; Integer.compareUnsigned(i2_U, 1 << rate_U) < 0; i2_U++) {
-					distances_U[i2_U] = distance(i2_U, out_U);
-				}
-			}
+        return encoded;
+    }
 
-			pairLookup.fillDistance(distances_U);
+    /**
+     * decodeSoft decodes a block encoded by encode and
+     * then modulated/demodulated to 8-bit symbols. This function expects
+     * that 1 is mapped to 255 and 0 to 0. An erased symbol should be
+     * set to 128. The decoded message may contain errors.
+     * @param encoded
+     * @param numEncodedBits  should contain the length of encoded in *bits*.
+     *       This value need not be an exact multiple of 8. However,
+     *       it must be a multiple of the inv_rate used to create
+     *       the conv instance.
+     * @return  decoded message
+     * @throws IllegalArgumentException
+     */
 
-			// a mask to get the high order bit from the shift register
-			int numIter_U = highbit_U << 1;
-			// aggregate bit errors for this time slice
+    public byte[] decodeSoft(byte[] encoded, long numEncodedBits) throws IllegalArgumentException {
+        if (Long.remainderUnsigned(numEncodedBits, this.rate_U) != 0) {
+            // XXX turn this into an error code
+            // printf("encoded length of message must be a multiple of rate\n");
+            throw new IllegalArgumentException("correctConvolutionalDecode: encoded length of message must be a multiple of rate");
+        }
 
-			byte[] history_U = historyBuffer.getSlice();
-			// walk through all states, ignoring oldest bit
-			// we will track a best register state (path) and the number of bit errors at that path at
-			// this time slice
-			// this loop considers two paths per iteration (high order bit set, clear)
-			// so, it only runs numstates/2 iterations
-			// we'll update the history for every state and find the path with the least aggregated bit
-			// errors
+        long numEncodedBytes = Long.remainderUnsigned(numEncodedBits, 8) != 0 ? Long.divideUnsigned(numEncodedBits, 8) + 1 :
+                Long.divideUnsigned(numEncodedBits, 8);
 
-			// now run the main loop
-			// we calculate 2 sets of 2 register states here (4 states per iter)
-			// this creates 2 sets which share a predecessor, and 2 sets which share a successor
-			//
-			// the first set definition is the two states that are the same except for the least order
-			// bit
-			// these two share a predecessor because their high n - 1 bits are the same (differ only by
-			// newest bit)
-			//
-			// the second set definition is the two states that are the same except for the high order
-			// bit
-			// these two share a successor because the oldest high order bit will be shifted out, and
-			// the other bits will be present in the successor
-			//
-			int highbase_U = highbit_U >>> 1;
-			for(int low_U = 0, high_U = highbit_U, base_U = 0; Integer.compareUnsigned(high_U, numIter_U) < 0; low_U += 8, high_U += 8, base_U += 4) {
-				// shifted-right ancestors
-				// low and low_plus_one share low_past_error
-				//   note that they are the same when shifted right by 1
-				// same goes for high and high_plus_one
-				for(int offset_U = 0, baseOffset_U = 0; Integer.compareUnsigned(baseOffset_U, 4) < 0; offset_U += 2, baseOffset_U += 1) {
-					int lowKey_U = pairLookup.getKey(base_U + baseOffset_U);
-					int highKey_U = pairLookup.getKey(highbase_U + base_U + baseOffset_U);
-					int lowConcatDist_U = pairLookup.getDistance(lowKey_U);
-					int highConcatDist_U = pairLookup.getDistance(highKey_U);
+        return _decode(numEncodedBits, numEncodedBytes,encoded);
+    }
 
-					short lowPastError_U = errorBuffer.getReadError(base_U + baseOffset_U);
-					short highPastError_U = errorBuffer.getReadError(highbase_U + base_U + baseOffset_U);
+     /**
+     * @param numEncodedBits  should contain the length of encoded in *bits*.
+     *       This value need not be an exact multiple of 8. However,
+     *       it must be a multiple of the inv_rate used to create
+     *       the conv instance.
+     * @return  decoded message
+     * @throws IllegalArgumentException
+     */
+    public byte[] decode(byte[] encoded, long numEncodedBits) throws IllegalArgumentException {
+        if (Long.remainderUnsigned(numEncodedBits, this.rate_U) != 0) {
+            // XXX turn this into an error code
+            // printf("encoded length of message must be a multiple of rate\n");
+            throw new IllegalArgumentException("correctConvolutionalDecode: encoded length of message must be a multiple of rate");
+        }
 
-					short lowError_U = (short)((lowConcatDist_U & 0xffff) + Short.toUnsignedInt(lowPastError_U));
-					short highError_U = (short)((highConcatDist_U & 0xffff) + Short.toUnsignedInt(highPastError_U));
+        long numEncodedBytes = Long.remainderUnsigned(numEncodedBits, 8) != 0 ? Long.divideUnsigned(numEncodedBits, 8) + 1 :
+                Long.divideUnsigned(numEncodedBits, 8);
+        bitReader.reconfigure(encoded, numEncodedBytes);
 
-					int successor_U = low_U + offset_U;
-					short error_U;
-					byte historyMask_U;
-					if(Short.toUnsignedInt(lowError_U) <= Short.toUnsignedInt(highError_U)) {
-						error_U = lowError_U;
-						historyMask_U = 0;
-					} else {
-						error_U = highError_U;
-						historyMask_U = 1;
-					}
-					errorBuffer.setWriteError(successor_U,error_U);
-					history_U[successor_U] = historyMask_U;
+        return _decode(numEncodedBits, numEncodedBytes, null);
+    }
 
-					int lowPlusOne_U = low_U + offset_U + 1;
-					short lowPlusOneError_U = (short)((lowConcatDist_U >>> 16) + Short.toUnsignedInt(lowPastError_U));
-					short highPlusOneError_U = (short)((highConcatDist_U >>> 16) + Short.toUnsignedInt(highPastError_U));
 
-					short plusOneError_U;
-					int plusOneSuccessor_U = lowPlusOne_U;
-					byte plusOneHistoryMask_U;
-					if(Short.toUnsignedInt(lowPlusOneError_U) <= Short.toUnsignedInt(highPlusOneError_U)) {
-						plusOneError_U = lowPlusOneError_U;
-						plusOneHistoryMask_U = 0;
-					} else {
-						plusOneError_U = highPlusOneError_U;
-						plusOneHistoryMask_U = 1;
-					}
+    public void decodePrintIter(int iter, int winnerIndex) {
+        if (Integer.compareUnsigned(iter, 2_220) < 0) {
+            return;
+        }
+        System.out.println("iteration: " + iter);
+        System.out.println("errors:");
+        for (int i = 0; Integer.compareUnsigned(i, Integer.divideUnsigned(numstates_U, 2)) < 0; i++) {
+            System.out.printf("%2d: %d\n", i, Short.toUnsignedInt(errorBuffer.getWriteError(i)));
+        }
+        System.out.println();
+        System.out.println("history:");
+        for (int i = 0; Integer.compareUnsigned(i, Integer.divideUnsigned(numstates_U, 2)) < 0; i++) {
+            System.out.printf("%2d: ", i);
+            for (int j = 0; Integer.compareUnsigned(j, winnerIndex) <= 0; j++) {
+                System.out.printf("%d", historyBuffer.getHistory(j, i) != 0 ? 1 : 0);
+            }
+            System.out.println();
+        }
+        System.out.println();
+    }
 
-					errorBuffer.setWriteError(plusOneSuccessor_U, plusOneError_U);
-					history_U[plusOneSuccessor_U] = plusOneHistoryMask_U;
+    private byte[] _decode(long numEncodedBits_U, long numEncodedBytes_U, byte[] softEncoded_U) {
+        if (!hasInitDecode) {
+            long maxErrorPerInput_U = rate_U * Byte.toUnsignedLong(SOFT_MAX);
+            int renormalizeInterval_U = (int) Long.divideUnsigned(Short.toUnsignedLong(DISTANCE_MAX), maxErrorPerInput_U);
+            decodeInit(5 * order_U, 15 * order_U, renormalizeInterval_U);
+        }
 
-				}
-			}
-			historyBuffer.process(errorBuffer.getWriteErrors(), bitWriter);
-			errorBuffer.swap();
-		}
-	}
+        int sets_U = (int) Long.divideUnsigned(numEncodedBits_U, rate_U);
+        // XXX fix this vvvvvv
+        byte[] msg = new byte[(int) numEncodedBytes_U];
+        bitWriter.reconfigure(msg, numEncodedBytes_U);
+        errorBuffer.reset();
+        historyBuffer.reset();
 
-	private void decodeTail(int sets_U, byte[] soft_U) {
-		// flush state registers
-		// now we only shift in 0s, skipping 1-successors
-		int highbit_U = 1 << order_U - 1;
+        // no outputs are generated during warmup
+        decodeWarmup(sets_U, softEncoded_U);
+        decodeInner(sets_U, softEncoded_U);
+        decodeTail(sets_U, softEncoded_U);
 
-		for(int i_U = (int)(Integer.toUnsignedLong(sets_U) - order_U + 1); Integer.compareUnsigned(i_U, sets_U) < 0; i_U++) {
-			// lasterrors are the aggregate bit errors for the states of shiftregister for the previous
-			// time slice
-			byte[] history_U = historyBuffer.getSlice();
-			// calculate the distance from all output states to our sliced bits
-			if(soft_U != null) {
-				if(softMeasurement == CORRECT_SOFT_LINEAR) {
-					for(int j_U = 0; Integer.compareUnsigned(j_U, 1 << rate_U) < 0; j_U++) {
-						distances_U[j_U] = Metric.softDistanceLinear(j_U, soft_U, rate_U,i_U * rate_U);
-					}
-				} else {
-					for(int j_U = 0; Integer.compareUnsigned(j_U, 1 << rate_U) < 0; j_U++) {
-						distances_U[j_U] = (short)Metric.softDistanceQuadratic(j_U, soft_U, rate_U,i_U * rate_U);
-					}
-				}
-			} else {
-				int out_U = bitReader.read(rate_U);
-				for (int i2_U = 0; Integer.compareUnsigned(i2_U, 1 << rate_U) < 0; i2_U++) {
-					distances_U[i2_U] = distance(i2_U, out_U);
-				}
-			}
+        historyBuffer.flush(bitWriter);
 
-			// a mask to get the high order bit from the shift register
-			int numIter_U = highbit_U << 1;
-			int skip_U = 1 << order_U - Integer.toUnsignedLong(sets_U - i_U);
-			int baseSkip_U = skip_U >>> 1;
+        return Arrays.copyOf(msg, bitWriter.length());
+    }
 
-			int highbase_U = highbit_U >>> 1;
-			for(int low_U = 0, high_U = highbit_U, base_U = 0; Integer.compareUnsigned(high_U, numIter_U) < 0; low_U += skip_U, high_U += skip_U, base_U += baseSkip_U) {
-				int lowOutput_U = table_U[low_U];
-				int highOutput_U = table_U[high_U];
-				short lowDist_U = distances_U[lowOutput_U];
-				short highDist_U = distances_U[highOutput_U];
+    private void decodeInit(int minTraceback_U, int tracebackLength_U, int renormalizeInterval_U) {
+        hasInitDecode = true;
+        distances_U = new short[1 << rate_U];
+        pairLookup = new PairLookup(rate_U, order_U, table_U);
+        softMeasurement = CORRECT_SOFT_LINEAR;
 
-				short lowPastError_U = errorBuffer.getReadError(base_U);
-				short highPastError_U = errorBuffer.getReadError(highbase_U + base_U);
+        // we limit history to go back as far as 5 * the order of our polynomial
+        historyBuffer = new HistoryBuffer(minTraceback_U, tracebackLength_U, renormalizeInterval_U,
+                numstates_U / 2, 1 << (order_U - 1));
+        errorBuffer = new ErrorBuffer(numstates_U);
+    }
 
-				short lowError_U = (short)(Short.toUnsignedInt(lowDist_U) + Short.toUnsignedInt(lowPastError_U));
-				short highError_U = (short)(Short.toUnsignedInt(highDist_U) + Short.toUnsignedInt(highPastError_U));
+    private void decodeWarmup(int sets_U, byte[] soft_U) {
+        // first phase: load shiftregister up from 0 (order goes from 1 to conv->order)
+        // we are building up error metrics for the first order bits
+        for (int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), this.order_U - 1) < 0 && Integer.compareUnsigned(i, sets_U) < 0; i++) {
+            // peel off rate bits from encoded to recover the same `out` as in the encoding process
+            // the difference being that this `out` will have the channel noise/errors applied
+            int out_U = 0;
+            if (soft_U == null) {
+                out_U = bitReader.read(this.rate_U);
+            }
+            // walk all of the state we have so far
+            for (int j = 0; Integer.compareUnsigned(j, 1 << i + 1) < 0; j += 1) {
+                int last_U = (int) (j >>> 1);
+                short dist_U;
 
-				int successor_U = low_U;
-				short error_U;
-				byte historyMask_U;
-				if(Short.toUnsignedInt(lowError_U) <= Short.toUnsignedInt(highError_U)) {
-					error_U = lowError_U;
-					historyMask_U = 0;
-				} else {
-					error_U = highError_U;
-					historyMask_U = 1;
-				}
-				errorBuffer.setWriteError(successor_U,error_U);
-				history_U[successor_U] = historyMask_U;
+                if (soft_U != null) {
+                    if (softMeasurement == CORRECT_SOFT_LINEAR) {
+                        dist_U = Metric.softDistanceLinear(table_U[j], soft_U, this.rate_U, i * this.rate_U);
+                    } else {
+                        dist_U = Metric.softDistanceQuadratic(table_U[j], soft_U, this.rate_U, i * this.rate_U);
+                    }
+                } else {
+                    dist_U = distance(table_U[j], out_U);
+                }
+                errorBuffer.setWriteError(j, (short) (dist_U + errorBuffer.getReadError(last_U)));
+            }
+            errorBuffer.swap();
+        }
+    }
 
-			}
-			historyBuffer.processSkip(errorBuffer.getWriteErrors(), bitWriter, skip_U);
-			errorBuffer.swap();
-		}
+    private void decodeInner(int sets_U, byte[] soft_U) {
+        int highbit_U = 1 << order_U - 1;
+        for (int i = order_U - 1; Long.compareUnsigned(Integer.toUnsignedLong(i), Integer.toUnsignedLong(sets_U) - order_U + 1) < 0; i++) {
+            // lasterrors are the aggregate bit errors for the states of shiftregister for the previous
+            // time slice
+            if (soft_U != null) {
+                if (softMeasurement == CORRECT_SOFT_LINEAR) {
+                    for (int j = 0; Integer.compareUnsigned(j, 1 << rate_U) < 0; j++) {
+                        distances_U[j] = Metric.softDistanceLinear(j, soft_U, rate_U, i * rate_U);
+                    }
+                } else {
+                    for (int j = 0; Integer.compareUnsigned(j, 1 << rate_U) < 0; j++) {
+                        distances_U[j] = (short) Metric.softDistanceQuadratic(j, soft_U, rate_U, i * rate_U);
+                    }
+                }
+            } else {
+                int out_U = bitReader.read(rate_U);
+                for (int i2 = 0; Integer.compareUnsigned(i2, 1 << rate_U) < 0; i2++) {
+                    distances_U[i2] = distance(i2, out_U);
+                }
+            }
 
-	}
+            pairLookup.fillDistance(distances_U);
 
-	private void decodeInit(int minTraceback_U, int tracebackLength_U, int renormalizeInterval_U) {
-		hasInitDecode = true;
-		distances_U = new short[1 << rate_U];
-		pairLookup = new PairLookup(rate_U, order_U, table_U);
-		softMeasurement = CORRECT_SOFT_LINEAR;
+            // a mask to get the high order bit from the shift register
+            int numIter_U = highbit_U << 1;
+            // aggregate bit errors for this time slice
 
-		// we limit history to go back as far as 5 * the order of our polynomial
-		historyBuffer = new HistoryBuffer(minTraceback_U, tracebackLength_U, renormalizeInterval_U,
-								numstates_U / 2, 1 << (order_U - 1));
-		errorBuffer = new ErrorBuffer(numstates_U);
-	}
+            byte[] history_U = historyBuffer.getSlice();
+            // walk through all states, ignoring oldest bit
+            // we will track a best register state (path) and the number of bit errors at that path at
+            // this time slice
+            // this loop considers two paths per iteration (high order bit set, clear)
+            // so, it only runs numstates/2 iterations
+            // we'll update the history for every state and find the path with the least aggregated bit
+            // errors
 
-	private long decode(long numEncodedBits_U, long numEncodedBytes_U, byte[] msg_U, byte[] softEncoded_U) {
-		if(!this.hasInitDecode) {
-			long maxErrorPerInput_U = rate_U * Byte.toUnsignedLong(softMax_U);
-			int renormalizeInterval_U = (int)Long.divideUnsigned(Short.toUnsignedLong(distanceMax_U), maxErrorPerInput_U);
-			decodeInit(5 * order_U, 15 * order_U, renormalizeInterval_U);
-		}
+            // now run the main loop
+            // we calculate 2 sets of 2 register states here (4 states per iter)
+            // this creates 2 sets which share a predecessor, and 2 sets which share a successor
+            //
+            // the first set definition is the two states that are the same except for the least order
+            // bit
+            // these two share a predecessor because their high n - 1 bits are the same (differ only by
+            // newest bit)
+            //
+            // the second set definition is the two states that are the same except for the high order
+            // bit
+            // these two share a successor because the oldest high order bit will be shifted out, and
+            // the other bits will be present in the successor
+            //
+            int highbase_U = highbit_U >>> 1;
+            for (int low_U = 0, high_U = highbit_U, base_U = 0; Integer.compareUnsigned(high_U, numIter_U) < 0; low_U += 8, high_U += 8, base_U += 4) {
+                // shifted-right ancestors
+                // low and low_plus_one share low_past_error
+                //   note that they are the same when shifted right by 1
+                // same goes for high and high_plus_one
+                for (int offset_U = 0, baseOffset_U = 0; Integer.compareUnsigned(baseOffset_U, 4) < 0; offset_U += 2, baseOffset_U += 1) {
+                    int lowKey_U = pairLookup.getKey(base_U + baseOffset_U);
+                    int highKey_U = pairLookup.getKey(highbase_U + base_U + baseOffset_U);
+                    int lowConcatDist_U = pairLookup.getDistance(lowKey_U);
+                    int highConcatDist_U = pairLookup.getDistance(highKey_U);
 
-		int sets_U = (int) Long.divideUnsigned(numEncodedBits_U, rate_U);
-		// XXX fix this vvvvvv
-		long decodedLenBytes_U = numEncodedBytes_U;
-		bitWriter.reconfigure(msg_U, decodedLenBytes_U);
-		errorBuffer.reset();
-		historyBuffer.reset();
+                    short lowPastError_U = errorBuffer.getReadError(base_U + baseOffset_U);
+                    short highPastError_U = errorBuffer.getReadError(highbase_U + base_U + baseOffset_U);
 
-		// no outputs are generated during warmup
-		decodeWarmup(sets_U, softEncoded_U);
-		decodeInner(sets_U, softEncoded_U);
-		decodeTail(sets_U, softEncoded_U);
+                    short lowError_U = (short) ((lowConcatDist_U & 0xffff) + Short.toUnsignedInt(lowPastError_U));
+                    short highError_U = (short) ((highConcatDist_U & 0xffff) + Short.toUnsignedInt(highPastError_U));
 
-		historyBuffer.flush(bitWriter);
+                    int successor_U = low_U + offset_U;
+                    short error_U;
+                    byte historyMask_U;
+                    if (Short.toUnsignedInt(lowError_U) <= Short.toUnsignedInt(highError_U)) {
+                        error_U = lowError_U;
+                        historyMask_U = 0;
+                    } else {
+                        error_U = highError_U;
+                        historyMask_U = 1;
+                    }
+                    errorBuffer.setWriteError(successor_U, error_U);
+                    history_U[successor_U] = historyMask_U;
 
-		return bitWriter.length();
-	}
+                    int lowPlusOne_U = low_U + offset_U + 1;
+                    short lowPlusOneError_U = (short) ((lowConcatDist_U >>> 16) + Short.toUnsignedInt(lowPastError_U));
+                    short highPlusOneError_U = (short) ((highConcatDist_U >>> 16) + Short.toUnsignedInt(highPastError_U));
 
-	/**
-	 * correct_convolutional_decode uses the given conv instance to
-	 * decode a block encoded by correct_convolutional_encode. This
-	 * call can cope with some bits being corrupted. This function
-	 * cannot detect if there are too many bits corrupted, however,
-	 * and will still write a message even if it is not recovered
-	 * correctly. It is up to the user to perform checksums or CRC
-	 * in order to guarantee that the decoded message is intact.
-	 *
-	 * num_encoded_bits should contain the length of encoded in *bits*.
-	 * This value need not be an exact multiple of 8. However,
-	 * it must be a multiple of the inv_rate used to create
-	 * the conv instance.
-	 *
-	 * This function writes the result to msg, which must be large
-	 * enough to hold the decoded message. A good conservative size
-	 * for this buffer is the number of encoded bits multiplied by the
-	 * rate of the code, e.g. for a rate 1/2 code, divide by 2. This
-	 * value should then be converted to bytes to find the correct
-	 * length for msg.
-	 *
-	 * This function returns the number of bytes written to msg. If
-	 * it fails, it returns -1.
-	 */
-	public long decode(byte[] encoded_U, long numEncodedBits_U, byte[] msg_U) throws IllegalArgumentException {
-		if(Long.remainderUnsigned(numEncodedBits_U, this.rate_U) != 0) {
-			// XXX turn this into an error code
-			// printf("encoded length of message must be a multiple of rate\n");
-			throw new IllegalArgumentException("correctConvolutionalDecode: encoded length of message must be a multiple of rate");
-		}
+                    short plusOneError_U;
+                    int plusOneSuccessor_U = lowPlusOne_U;
+                    byte plusOneHistoryMask_U;
+                    if (Short.toUnsignedInt(lowPlusOneError_U) <= Short.toUnsignedInt(highPlusOneError_U)) {
+                        plusOneError_U = lowPlusOneError_U;
+                        plusOneHistoryMask_U = 0;
+                    } else {
+                        plusOneError_U = highPlusOneError_U;
+                        plusOneHistoryMask_U = 1;
+                    }
 
-		long numEncodedBytes_U = Long.remainderUnsigned(numEncodedBits_U, 8) != 0 ? Long.divideUnsigned(numEncodedBits_U, 8) + 1 :
-																						  Long.divideUnsigned(numEncodedBits_U, 8);
-		bitReader.reconfigure(encoded_U, numEncodedBytes_U);
+                    errorBuffer.setWriteError(plusOneSuccessor_U, plusOneError_U);
+                    history_U[plusOneSuccessor_U] = plusOneHistoryMask_U;
 
-		return decode(numEncodedBits_U, numEncodedBytes_U, msg_U, null);
-	}
-	/**
-	 *  correct_convolutional_decode_soft uses the given conv instance
-	 * to decode a block encoded by correct_convolutional_encode and
-	 * then modulated/demodulated to 8-bit symbols. This function expects
-	 * that 1 is mapped to 255 and 0 to 0. An erased symbol should be
-	 * set to 128. The decoded message may contain errors.
-	 *
-	 * num_encoded_bits should contain the length of encoded in *bits*.
-	 * This value need not be an exact multiple of 8. However,
-	 * it must be a multiple of the inv_rate used to create
-	 * the conv instance.
-	 *
-	 * This function writes the result to msg, which must be large
-	 * enough to hold the decoded message. A good conservative size
-	 * for this buffer is the number of encoded bits multiplied by the
-	 * rate of the code, e.g. for a rate 1/2 code, divide by 2. This
-	 * value should then be converted to bytes to find the correct
-	 * length for msg.
-	 *
-	 * This function returns the number of bytes written to msg. If
-	 * it fails, it returns -1.
-	 */
+                }
+            }
+            historyBuffer.process(errorBuffer.getWriteErrors(), bitWriter);
+            errorBuffer.swap();
+        }
+    }
 
-	public long decodeSoft(byte[] encoded_U, long numEncodedBits_U, byte[] msg_U) throws IllegalArgumentException {
-		if(Long.remainderUnsigned(numEncodedBits_U, this.rate_U) != 0) {
-			// XXX turn this into an error code
-			// printf("encoded length of message must be a multiple of rate\n");
-			throw new IllegalArgumentException("correctConvolutionalDecode: encoded length of message must be a multiple of rate");
-		}
+    private void decodeTail(int sets_U, byte[] soft_U) {
+        // flush state registers
+        // now we only shift in 0s, skipping 1-successors
+        int highbit_U = 1 << order_U - 1;
 
-		long numEncodedBytes_U = Long.remainderUnsigned(numEncodedBits_U, 8) != 0 ? Long.divideUnsigned(numEncodedBits_U, 8) + 1 :
-								 Long.divideUnsigned(numEncodedBits_U, 8);
+        for (int i = (int) (Integer.toUnsignedLong(sets_U) - order_U + 1); Integer.compareUnsigned(i, sets_U) < 0; i++) {
+            // lasterrors are the aggregate bit errors for the states of shiftregister for the previous
+            // time slice
+            byte[] history_U = historyBuffer.getSlice();
+            // calculate the distance from all output states to our sliced bits
+            if (soft_U != null) {
+                if (softMeasurement == CORRECT_SOFT_LINEAR) {
+                    for (int j = 0; Integer.compareUnsigned(j, 1 << rate_U) < 0; j++) {
+                        distances_U[j] = Metric.softDistanceLinear(j, soft_U, rate_U, i * rate_U);
+                    }
+                } else {
+                    for (int j = 0; Integer.compareUnsigned(j, 1 << rate_U) < 0; j++) {
+                        distances_U[j] = (short) Metric.softDistanceQuadratic(j, soft_U, rate_U, i * rate_U);
+                    }
+                }
+            } else {
+                int out_U = bitReader.read(rate_U);
+                for (int i2 = 0; Integer.compareUnsigned(i2, 1 << rate_U) < 0; i2++) {
+                    distances_U[i2] = distance(i2, out_U);
+                }
+            }
 
-		return decode(numEncodedBits_U, numEncodedBytes_U, msg_U, encoded_U);
-	}
+            // a mask to get the high order bit from the shift register
+            int numIter_U = highbit_U << 1;
+            int skip_U = 1 << order_U - Integer.toUnsignedLong(sets_U - i);
+            int baseSkip_U = skip_U >>> 1;
+
+            int highbase_U = highbit_U >>> 1;
+            for (int low_U = 0, high_U = highbit_U, base_U = 0; Integer.compareUnsigned(high_U, numIter_U) < 0; low_U += skip_U, high_U += skip_U, base_U += baseSkip_U) {
+                int lowOutput_U = table_U[low_U];
+                int highOutput_U = table_U[high_U];
+                short lowDist_U = distances_U[lowOutput_U];
+                short highDist_U = distances_U[highOutput_U];
+
+                short lowPastError_U = errorBuffer.getReadError(base_U);
+                short highPastError_U = errorBuffer.getReadError(highbase_U + base_U);
+
+                short lowError_U = (short) (Short.toUnsignedInt(lowDist_U) + Short.toUnsignedInt(lowPastError_U));
+                short highError_U = (short) (Short.toUnsignedInt(highDist_U) + Short.toUnsignedInt(highPastError_U));
+
+                int successor_U = low_U;
+                short error_U;
+                byte historyMask_U;
+                if (Short.toUnsignedInt(lowError_U) <= Short.toUnsignedInt(highError_U)) {
+                    error_U = lowError_U;
+                    historyMask_U = 0;
+                } else {
+                    error_U = highError_U;
+                    historyMask_U = 1;
+                }
+                errorBuffer.setWriteError(successor_U, error_U);
+                history_U[successor_U] = historyMask_U;
+
+            }
+            historyBuffer.processSkip(errorBuffer.getWriteErrors(), bitWriter, skip_U);
+            errorBuffer.swap();
+        }
+
+    }
+
+    public void fillTable(int rate_U, int order_U, short[] poly_U) {
+        for(int i = 0; Integer.compareUnsigned(i, 1 << order_U) < 0; i++) {
+            int out_U = 0;
+            int mask_U = 1;
+            for(int j_U = 0; Integer.compareUnsigned(j_U, rate_U) < 0; j_U++) {
+                out_U |= Integer.bitCount(i & Short.toUnsignedInt(poly_U[j_U])) % 2 != 0 ? mask_U : 0;
+                mask_U <<= 1;
+            }
+            table_U[i] = out_U;
+        }
+    }
+
 
 }

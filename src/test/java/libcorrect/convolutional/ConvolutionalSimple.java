@@ -10,28 +10,24 @@ public class ConvolutionalSimple {
 
     @Test
     void convTestPassThrough() {
-        byte[] msgIn = "abcde".getBytes();
-        byte[] encoded = new byte[100];
-        byte[] msgOut = new byte[msgIn.length];
+        byte[] msgIn = "abcdef".getBytes();
         Convolutional conv = new Convolutional(2, 9, correctConvR129Polynomial);
-        conv.encode(msgIn, msgIn.length, encoded);
-        long enclen = encoded.length;
-        long decodedLen = conv.decode(encoded,enclen, msgOut);
-        assert decodedLen == msgIn.length;
+        long enclen = conv.encodeLen(msgIn.length);
+        byte[] encoded = conv.encode(msgIn);
+        byte[] msgOut = conv.decode(encoded,enclen);
+        assert msgOut.length == msgIn.length;
         assert Arrays.equals(msgOut,msgIn);
     }
 
     @Test
     void convTestPassWithCorrection() {
-        byte[] msgIn = "abcde".getBytes();
-        byte[] encoded = new byte[100];
-        byte[] msgOut = new byte[msgIn.length];
+        byte[] msgIn = "abcdef".getBytes();
         Convolutional conv = new Convolutional(2, 9, correctConvR129Polynomial);
-        conv.encode(msgIn, msgIn.length, encoded);
+        long enclen = conv.encodeLen(msgIn.length);
+        byte[] encoded =conv.encode(msgIn);
         encoded[3] = (byte) (encoded[3]+1);
-        long enclen = encoded.length;
-        long decodedLen = conv.decode(encoded,enclen, msgOut);
-        assert decodedLen == 5;
+        byte[] msgOut = conv.decode(encoded, enclen);
+        assert msgOut.length == msgIn.length;
         assert Arrays.equals(msgOut,msgIn);
     }
 }
