@@ -4,5 +4,4 @@ typedef struct { field_element_t *coeff; unsigned int order;} polynomial_t;
 typedef struct  {size_t block_length,message_length,min_distance;field_t field;field_element_t *syndromes, *modified_syndromes,*generator_roots,*error_roots,*error_vals;
 field_logarithm_t *error_locations,**element_exp,**generator_root_exp,first_consecutive_root, generator_root_gap;
 polynomial_t generator, encoded_polynomial, encoded_remainder, last_error_locator,error_evaluator, error_locator_derivative, init_from_roots_scratch[2],received_polynomial,error_locator,error_locator_log,erasure_locator;
-bool has_init_decode;  
-};
+bool has_init_decode;};

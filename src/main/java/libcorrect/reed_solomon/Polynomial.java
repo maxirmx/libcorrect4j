@@ -12,17 +12,32 @@ public class Polynomial implements Cloneable {
     private byte[] coeff_U;
     private int order_U;
 
-    public Polynomial(int order_U) {
-        coeff_U = new byte[order_U + 1];
-        this.order_U = order_U;
+    public Polynomial(int order) {
+        coeff_U = new byte[order + 1];
+        order_U = order;
+    }
+
+    public Polynomial(int order, byte[] coeff) {
+        order_U = order;
+        coeff_U = Arrays.copyOf(coeff, order_U+1);
+    }
+
+
+    public Polynomial(Polynomial p) {
+        order_U = p.order_U;
+        coeff_U = Arrays.copyOf(p.coeff_U, order_U+1);
     }
 
     public Polynomial clone() {
-        return new Polynomial(order_U);
+        return new Polynomial(this);
     }
 
     public int getOrder() {
         return order_U;
+    }
+
+    public void setOrder(int v) {
+        order_U = v;
     }
 
     public byte getCoeff(int i) {
@@ -142,45 +157,45 @@ public class Polynomial implements Cloneable {
         return res_U;
     }
 
-    public static byte polynomialEvalLut(Field field, Polynomial poly, byte[] valExp_U) {
+    public byte polynomialEvalLut(Field field, byte[] valExp_U) {
         // evaluate the polynomial poly at a particular element val
         // in this case, all of the logarithms of the successive powers of val have been precalculated
         // this removes the extra work we'd have to do to calculate val_exponentiated each time
         //   if this function is to be called on the same val multiple times
         if (Byte.toUnsignedInt(valExp_U[0]) == 0) {
-            return poly.coeff_U[0];
+            return coeff_U[0];
         }
 
         byte res_U = 0;
 
-        for (int i_U = 0; Integer.compareUnsigned(i_U, poly.order_U) <= 0; i_U++) {
-            if (Byte.toUnsignedInt(poly.coeff_U[i_U]) != 0) {
+        for (int i_U = 0; Integer.compareUnsigned(i_U, order_U) <= 0; i_U++) {
+            if (Byte.toUnsignedInt(coeff_U[i_U]) != 0) {
                 // multiply-accumulate by the next coeff times the next power of val
-                res_U = field.fieldAdd(res_U, field.fieldMulLogElement(field.log_U[Byte.toUnsignedInt(poly.coeff_U[i_U])], valExp_U[i_U]));
+                res_U = field.fieldAdd(res_U, field.fieldMulLogElement(field.log_U[Byte.toUnsignedInt(coeff_U[i_U])], valExp_U[i_U]));
             }
         }
         return res_U;
     }
 
-    public static byte polynomialEvalLogLut_U(Field field, Polynomial polyLog, byte[] valExp_U) {
+    public byte polynomialEvalLogLut(Field field, byte[] valExp_U) {
         // evaluate the log_polynomial poly at a particular element val
         // like polynomial_eval_lut, the logarithms of the successive powers of val have been
         //   precomputed
         if (Byte.toUnsignedInt(valExp_U[0]) == 0) {
-            if (Byte.toUnsignedInt(polyLog.coeff_U[0]) == 0) {
+            if (Byte.toUnsignedInt(coeff_U[0]) == 0) {
                 // special case for the non-existant log case
                 return 0;
             }
-            return field.exp_U[Byte.toUnsignedInt(polyLog.coeff_U[0])];
+            return field.exp_U[Byte.toUnsignedInt(coeff_U[0])];
         }
 
         byte res_U = 0;
 
-        for (int i_U = 0; Integer.compareUnsigned(i_U, polyLog.order_U) <= 0; i_U++) {
+        for (int i_U = 0; Integer.compareUnsigned(i_U, order_U) <= 0; i_U++) {
             // using 0 as a sentinel value in log -- log(0) is really -inf
-            if (Byte.toUnsignedInt(polyLog.coeff_U[i_U]) != 0) {
+            if (Byte.toUnsignedInt(coeff_U[i_U]) != 0) {
                 // multiply-accumulate by the next coeff times the next power of val
-                res_U = (byte) field.fieldAdd(res_U, field.fieldMulLogElement(polyLog.coeff_U[i_U], valExp_U[i_U]));
+                res_U = (byte) field.fieldAdd(res_U, field.fieldMulLogElement(coeff_U[i_U], valExp_U[i_U]));
             }
         }
         return res_U;
