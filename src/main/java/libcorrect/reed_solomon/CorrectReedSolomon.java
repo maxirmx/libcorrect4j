@@ -12,23 +12,23 @@ import java.util.Arrays;
 import static libcorrect.reed_solomon.Polynomial.*;
 
 public class CorrectReedSolomon {
-    private static final short correctRsPrimitivePolynomial_8_4_3_2_0 = 0x11d;        // x^8 + x^4 + x^3 + x^2 + 1
-    private static final short correctRsPrimitivePolynomial_8_5_3_1_0 = 0x12b;        // x^8 + x^5 + x^3 + x + 1
-    private static final short correctRsPrimitivePolynomial_8_5_3_2_0 = 0x12d;        // x^8 + x^5 + x^3 + x^2 + 1
-    private static final short correctRsPrimitivePolynomial_8_6_3_2_0 = 0x14d;        // x^8 + x^6 + x^3 + x^2 + 1
-    private static final short correctRsPrimitivePolynomial_8_6_4_3_2_1_0 = 0x15f;    // x^8 + x^6 + x^4 + x^3 + x^2 + x + 1;
-    private static final short correctRsPrimitivePolynomial_8_6_5_1_0 = 0x163;        // x^8 + x^6 + x^5 + x + 1
-    private static final short correctRsPrimitivePolynomial_8_6_5_2_0 = 0x165;        // x^8 + x^6 + x^5 + x^2 + 1
-    private static final short correctRsPrimitivePolynomial_8_6_5_3_0 = 0x169;        // x^8 + x^6 + x^5 + x^3 + 1
-    private static final short correctRsPrimitivePolynomial_8_6_5_4_0 = 0x171;        // x^8 + x^6 + x^5 + x^4 + 1
-    private static final short correctRsPrimitivePolynomial_8_7_2_1_0 = 0x187;        // x^8 + x^7 + x^2 + x + 1
-    private static final short correctRsPrimitivePolynomial_8_7_3_2_0 = 0x18d;        // x^8 + x^7 + x^3 + x^2 + 1
-    private static final short correctRsPrimitivePolynomial_8_7_5_3_0 = 0x1a9;        // x^8 + x^7 + x^5 + x^3 + 1
-    private static final short correctRsPrimitivePolynomial_8_7_6_1_0 = 0x1c3;        // x^8 + x^7 + x^6 + x + 1
-    private static final short correctRsPrimitivePolynomial_8_7_6_3_2_1_0 = 0x1cf;    // x^8 + x^7 + x^6 + x^3 + x^2 + x + 1
-    private static final short correctRsPrimitivePolynomial_8_7_6_5_2_1_0 = 0x1e7;    // x^8 + x^7 + x^6 + x^5 + x^2 + x + 1
-    private static final short correctRsPrimitivePolynomial_8_7_6_5_4_2_0 = 0x1f5;    // x^8 + x^7 + x^6 + x^5 + x^4 + x^2 + 1
-    private static final short correctRsPrimitivePolynomialCcsds      = 0x187;        // x^8 + x^7 + x^2 + x + 1
+    public static final short correctRsPrimitivePolynomial_8_4_3_2_0 = 0x11d;        // x^8 + x^4 + x^3 + x^2 + 1
+    public static final short correctRsPrimitivePolynomial_8_5_3_1_0 = 0x12b;        // x^8 + x^5 + x^3 + x + 1
+    public static final short correctRsPrimitivePolynomial_8_5_3_2_0 = 0x12d;        // x^8 + x^5 + x^3 + x^2 + 1
+    public static final short correctRsPrimitivePolynomial_8_6_3_2_0 = 0x14d;        // x^8 + x^6 + x^3 + x^2 + 1
+    public static final short correctRsPrimitivePolynomial_8_6_4_3_2_1_0 = 0x15f;    // x^8 + x^6 + x^4 + x^3 + x^2 + x + 1;
+    public static final short correctRsPrimitivePolynomial_8_6_5_1_0 = 0x163;        // x^8 + x^6 + x^5 + x + 1
+    public static final short correctRsPrimitivePolynomial_8_6_5_2_0 = 0x165;        // x^8 + x^6 + x^5 + x^2 + 1
+    public static final short correctRsPrimitivePolynomial_8_6_5_3_0 = 0x169;        // x^8 + x^6 + x^5 + x^3 + 1
+    public static final short correctRsPrimitivePolynomial_8_6_5_4_0 = 0x171;        // x^8 + x^6 + x^5 + x^4 + 1
+    public static final short correctRsPrimitivePolynomial_8_7_2_1_0 = 0x187;        // x^8 + x^7 + x^2 + x + 1
+    public static final short correctRsPrimitivePolynomial_8_7_3_2_0 = 0x18d;        // x^8 + x^7 + x^3 + x^2 + 1
+    public static final short correctRsPrimitivePolynomial_8_7_5_3_0 = 0x1a9;        // x^8 + x^7 + x^5 + x^3 + 1
+    public static final short correctRsPrimitivePolynomial_8_7_6_1_0 = 0x1c3;        // x^8 + x^7 + x^6 + x + 1
+    public static final short correctRsPrimitivePolynomial_8_7_6_3_2_1_0 = 0x1cf;    // x^8 + x^7 + x^6 + x^3 + x^2 + x + 1
+    public static final short correctRsPrimitivePolynomial_8_7_6_5_2_1_0 = 0x1e7;    // x^8 + x^7 + x^6 + x^5 + x^2 + x + 1
+    public static final short correctRsPrimitivePolynomial_8_7_6_5_4_2_0 = 0x1f5;    // x^8 + x^7 + x^6 + x^5 + x^4 + x^2 + 1
+    public static final short correctRsPrimitivePolynomialCcsds      = 0x187;        // x^8 + x^7 + x^2 + x + 1
 
 
 
@@ -37,12 +37,12 @@ public class CorrectReedSolomon {
     private final long minDistance_U;
     private final byte firstConsecutiveRoot_U;
     private final byte generatorRootGap_U;
-    private Field field;
+    private final Field field;
     private Polynomial generator;
-    private byte[] generatorRoots_U;
+    private final byte[] generatorRoots_U;
     private byte[][] generatorRootExp_U;
-    private Polynomial encodedPolynomial;
-    private Polynomial encodedRemainder;
+    private final Polynomial encodedPolynomial;
+    private final Polynomial encodedRemainder;
     private byte[] syndromes_U;
     private byte[] modifiedSyndromes_U;
     private Polynomial receivedPolynomial;
@@ -61,7 +61,7 @@ public class CorrectReedSolomon {
     // used during error value search
     private Polynomial errorEvaluator;
     private Polynomial errorLocatorDerivative;
-    private Polynomial[] initFromRootsScratch = new Polynomial[2];
+    private final Polynomial[] initFromRootsScratch = new Polynomial[2];
     private boolean hasInitDecode;
 
     // coeff must be of size nroots + 1
