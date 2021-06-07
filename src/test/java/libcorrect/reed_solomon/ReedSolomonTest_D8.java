@@ -3,8 +3,8 @@ package libcorrect.reed_solomon;
 import org.junit.jupiter.api.Test;
 import java.util.Random;
 
-public class ReedSolomonTest_D16 extends ReedSolomonTest {
-    void ReadSolominTest_D8() {
+public class ReedSolomonTest_D8 extends ReedSolomonTest {
+    void ReedSolominTest_D8() {
         init(8);
     }
     
