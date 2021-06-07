@@ -4,8 +4,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Random;
 
-import static libcorrect.reed_solomon.CorrectReedSolomon.correctRsPrimitivePolynomialCcsds;
-
 public class ReedSolomonTest_D32 extends ReedSolomonTest {
     void ReadSolominTest_32() {
         init(32);
