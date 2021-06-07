@@ -6,7 +6,7 @@ import java.util.Random;
 
 import static libcorrect.reed_solomon.CorrectReedSolomon.correctRsPrimitivePolynomialCcsds;
 
-public class ReedSolomonTest_D16 {
+public class ReedSolomonTest_D16 extends ReedSolomonTest {
     private final static Random RANDOM = new Random(1);
     private final long blockLength_U = 255;
     private final long minDistance_U = 32;
@@ -14,7 +14,7 @@ public class ReedSolomonTest_D16 {
     private CorrectReedSolomon rs = new CorrectReedSolomon(correctRsPrimitivePolynomialCcsds, (byte)1, (byte)1, minDistance_U);
     private RSTestbench testbench = new RSTestbench(blockLength_U, minDistance_U);
     
-      @Test
+    @Test
     void RS_T_1() {
         RANDOM.setSeed(System.currentTimeMillis());
         runTests(rs, testbench, blockLength_U, Long.divideUnsigned(messageLength_U, 2), 0, 0, 20_000);
