@@ -1,6 +1,7 @@
 package libcorrect.reed_solomon;
 
 import java.util.Random;
+import static libcorrect.reed_solomon.CorrectReedSolomon.correctRsPrimitivePolynomialCcsds;
 
 public class ReedSolomonTest {
     protected final Random RANDOM = new Random(1);
