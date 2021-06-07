@@ -7,8 +7,8 @@ public class RsTestRun {
             return outputMatches;
         }
 
-        public boolean setOutputMatches(boolean newOutputMatches) {
-            return outputMatches = newOutputMatches;
+        public void setOutputMatches(boolean newOutputMatches) {
+            outputMatches = newOutputMatches;
         }
 
     }

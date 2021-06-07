@@ -32,6 +32,10 @@ public class Polynomial implements Cloneable {
         return new Polynomial(this);
     }
 
+    public void copyCoeff(Polynomial p) {
+        coeff_U = Arrays.copyOf(p.coeff_U, p.coeff_U.length);
+    }
+
     public int getOrder() {
         return order_U;
     }
@@ -148,11 +152,11 @@ public class Polynomial implements Cloneable {
         for (int i_U = 0; Integer.compareUnsigned(i_U, poly.order_U) <= 0; i_U++) {
             if (Byte.toUnsignedInt(poly.coeff_U[i_U]) != 0) {
                 // multiply-accumulate by the next coeff times the next power of val
-                res_U = (byte) field.fieldAdd(res_U, field.fieldMulLogElement(field.log_U[Byte.toUnsignedInt(poly.coeff_U[i_U])],
+                res_U = field.fieldAdd(res_U, field.fieldMulLogElement(field.log_U[Byte.toUnsignedInt(poly.coeff_U[i_U])],
                                                                               valExponentiated_U));
             }
             // now advance to the next power
-            valExponentiated_U = (byte) field.fieldMulLog(valExponentiated_U, valLog_U);
+            valExponentiated_U = field.fieldMulLog(valExponentiated_U, valLog_U);
         }
         return res_U;
     }
@@ -266,8 +270,10 @@ public class Polynomial implements Cloneable {
         // each time through the loop, we take the previous result and use it as new rightside
         // swap back and forth (prevents the need for a copy)
 
-        r[0] = new Polynomial(1);
+        r[0] = new Polynomial(order_U);
         r[1] = new Polynomial(order_U);
+        r[0].order_U = 1;
+
         int rcoeffres_U = 0;
 
         // initialize the result with x + roots[0]

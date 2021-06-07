@@ -107,7 +107,7 @@ public class CorrectReedSolomon {
         hasInitDecode = false;
     }
 
-    public void correctReedSolomonDebugPrint() {
+    public void debugPrint() {
         for (int i_U = 0; Integer.compareUnsigned(i_U, 256) < 0; i_U++) {
             System.out.printf("%3d  %3d    %3d  %3d\n", i_U, Byte.toUnsignedInt(field.exp_U[i_U]), i_U, Byte.toUnsignedInt(field.log_U[i_U]));
         }
@@ -314,7 +314,7 @@ public class CorrectReedSolomon {
         // | rem (rs->min_distance) | msg (msg_length) | pad (pad_length) |
 
         for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), encodedLength_U) < 0; i_U++) {
-            receivedPolynomial.setCoeff(i_U, encoded_U[(int) (encodedLength_U - Integer.toUnsignedLong(i_U + 1))]);
+            receivedPolynomial.setCoeff(i_U, encoded_U[(int) (encodedLength_U - (i_U + 1))]);
         }
 
         // fill the pad_length with 0s
@@ -330,8 +330,8 @@ public class CorrectReedSolomon {
             // copy to msg and we are done
             for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), msgLength_U) < 0; i_U++) {
                 msg_U[i_U] = receivedPolynomial.getCoeff((int) (encodedLength_U - Integer.toUnsignedLong(i_U + 1)));
-                return msgLength_U;
             }
+            return msgLength_U;
         }
         int order_U = reedSolomonFindErrorLocator(0);
         // XXX fix this vvvv
@@ -543,8 +543,9 @@ public class CorrectReedSolomon {
         // initialize to f(x) = 1
         errorLocator.setCoeff(0, (byte) 1);
         errorLocator.setOrder(0);
+        lastErrorLocator.setOrder(0);
 
-        lastErrorLocator = errorLocator.clone();
+        lastErrorLocator.copyCoeff(errorLocator);
 
         byte discrepancy_U;
         byte lastDiscrepancy_U = 1;
@@ -585,7 +586,7 @@ public class CorrectReedSolomon {
                 byte temp_U;
                 for (int j = 0; Integer.compareUnsigned(j, lastErrorLocator.getOrder() + delayLength_U) <= 0; j++) {
                     temp_U = errorLocator.getCoeff(j);
-                    errorLocator.setCoeff(j, (byte) field.fieldAdd(errorLocator.getCoeff(j), lastErrorLocator.getCoeff(j)));
+                    errorLocator.setCoeff(j, field.fieldAdd(errorLocator.getCoeff(j), lastErrorLocator.getCoeff(j)));
                     lastErrorLocator.setCoeff(j, temp_U);
                 }
                 int tempOrder_U = errorLocator.getOrder();
@@ -685,9 +686,10 @@ public class CorrectReedSolomon {
             if (Byte.toUnsignedInt(errorRoots_U[i_U]) == 0) {
                 continue;
             }
-            errorVals_U[i_U] = field.fieldMul(field.fieldPow(errorRoots_U[i_U],
-                    Byte.toUnsignedInt(firstConsecutiveRoot_U) - 1), field.fieldDiv(errorEvaluator.polynomialEvalLut(field, elementExp_U[Byte.toUnsignedInt(errorRoots_U[i_U])]),
-                    errorLocatorDerivative.polynomialEvalLut(field, elementExp_U[Byte.toUnsignedInt(errorRoots_U[i_U])])));
+            errorVals_U[i_U] = field.fieldMul(field.fieldPow(errorRoots_U[i_U], Byte.toUnsignedInt(firstConsecutiveRoot_U) - 1),
+                    field.fieldDiv(
+                            errorEvaluator.polynomialEvalLut(field, elementExp_U[Byte.toUnsignedInt(errorRoots_U[i_U])]),
+                            errorLocatorDerivative.polynomialEvalLut(field, elementExp_U[Byte.toUnsignedInt(errorRoots_U[i_U])])));
         }
     }
 
@@ -755,7 +757,7 @@ public class CorrectReedSolomon {
         errorLocations_U = new byte[(int) minDistance_U];
 
         lastErrorLocator = new Polynomial((int) minDistance_U);
-        errorEvaluator = new Polynomial((int) minDistance_U);
+        errorEvaluator = new Polynomial((int) minDistance_U-1);
         errorLocatorDerivative = new Polynomial((int) (minDistance_U - 1));
 
         // calculate and store the first block_length powers of every generator root
@@ -773,9 +775,9 @@ public class CorrectReedSolomon {
         // for min_distance = 32 this is 8k of memory, a pittance for the speedup we receive in exchange
         // we also get to reuse this work during error value calculation
         elementExp_U = new byte[256][];
-        for (short i = 0; i < 256; i++) {
-            elementExp_U[Short.toUnsignedInt(i)] = new byte[(int) minDistance_U];
-            polynomialBuildExpLut(field, (byte) i, (int) (minDistance_U - 1), elementExp_U[Short.toUnsignedInt(i)]);
+        for (int i = 0; i < 256; i++) {
+            elementExp_U[i] = new byte[(int) minDistance_U];
+            polynomialBuildExpLut(field, (byte) i, (int) (minDistance_U - 1), elementExp_U[i]);
         }
 
         initFromRootsScratch[0] = new Polynomial((int) minDistance_U);
