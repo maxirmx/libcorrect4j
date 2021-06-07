@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Random;
 
 public class ReedSolomonTest_D4 extends ReedSolomonTest {
-    void ReadSolominTest_D4() {
+    void ReedSolominTest_D4() {
         init(4);
     }
     
