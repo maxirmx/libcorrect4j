@@ -7,7 +7,7 @@ public class ReedSolomonTest_D32 extends ReedSolomonTest {
         init(32);
     }
 
-/*    @Test
+    @Test
     void RS_T_1() {
         runTests(Long.divideUnsigned(messageLength_U, 2), 0, 0, 20_000);
     }
@@ -16,7 +16,7 @@ public class ReedSolomonTest_D32 extends ReedSolomonTest {
     void RS_T_2() {
         runTests(messageLength_U, 0, 0, 20_000);
     }
-*/
+
     @Test
     void RS_T_3() {
         runTests(Long.divideUnsigned(messageLength_U, 2), Long.divideUnsigned(minDistance_U, 2), 0, 20_000);

@@ -23,17 +23,19 @@ public class Polynomial implements Cloneable {
     }
 
 
-    public Polynomial(Polynomial p) {
-        order_U = p.order_U;
-        coeff_U = Arrays.copyOf(p.coeff_U, order_U+1);
-    }
+//    public Polynomial(Polynomial p) {
+//        order_U = p.order_U;
+//        coeff_U = Arrays.copyOf(p.coeff_U, order_U+1);
+//    }
 
-    public Polynomial clone() {
-        return new Polynomial(this);
-    }
+//    public Polynomial clone() {
+//        return new Polynomial(this);
+//    }
 
     public void copyCoeff(Polynomial p) {
-        coeff_U = Arrays.copyOf(p.coeff_U, p.coeff_U.length);
+        for (int i=0; i<p.coeff_U.length; i++) {
+            coeff_U[i] = p.coeff_U[i];
+        }
     }
 
     public int getOrder() {
@@ -42,6 +44,10 @@ public class Polynomial implements Cloneable {
 
     public void setOrder(int v) {
         order_U = v;
+    }
+
+    public byte[] getCoeff() {
+        return coeff_U;
     }
 
     public byte getCoeff(int i) {
@@ -199,7 +205,7 @@ public class Polynomial implements Cloneable {
             // using 0 as a sentinel value in log -- log(0) is really -inf
             if (Byte.toUnsignedInt(coeff_U[i_U]) != 0) {
                 // multiply-accumulate by the next coeff times the next power of val
-                res_U = (byte) field.fieldAdd(res_U, field.fieldMulLogElement(coeff_U[i_U], valExp_U[i_U]));
+                res_U = field.fieldAdd(res_U, field.fieldMulLogElement(coeff_U[i_U], valExp_U[i_U]));
             }
         }
         return res_U;
@@ -231,8 +237,8 @@ public class Polynomial implements Cloneable {
         // each time through the loop, we take the previous result and use it as new rightside
         // swap back and forth (prevents the need for a copy)
         Polynomial[] r = new Polynomial[2];
-        r[0] = scratch[0].clone();
-        r[1] = scratch[1].clone();
+        r[0] = scratch[0];  // clone ?
+        r[1] = scratch[1];  // clone ?
         int rcoeffres_U = 0;
 
         // initialize the result with x + roots[0]

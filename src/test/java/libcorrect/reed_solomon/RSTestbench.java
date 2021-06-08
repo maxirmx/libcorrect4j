@@ -17,21 +17,21 @@ public class RSTestbench {
     private final static Random RANDOM = new Random(1);
 
     public static void shuffle(int[] a, long len) {
-/*        for (long i = 0; Long.compareUnsigned(i, len - 2) < 0; i++) {
+        for (long i = 0; Long.compareUnsigned(i, len - 2) < 0; i++) {
             long j = Long.remainderUnsigned(RANDOM.nextInt(), len - i) + i;
             int temp = a[(int) i];
             a[(int) i] = a[(int) j];
             a[(int) j] = temp;
-        } */
+        }
     }
 
     public static void rsCorrectEncode(CorrectReedSolomon  encoder, byte[] msg_U, long msgLength_U, byte[] msgOut_U) {
-        encoder.correctReedSolomonEncode(msg_U, msgLength_U, msgOut_U);
+        encoder.encode(msg_U, msgLength_U, msgOut_U);
     }
 
     public static void rsCorrectDecode(CorrectReedSolomon decoder, byte[] encoded_U, long encodedLength_U, byte[] erasureLocations_U,
                                        long erasureLength_U, byte[] msg_U, long padLength_U, long numRoots_U) {
-        decoder.correctReedSolomonDecodeWithErasures(encoded_U, encodedLength_U, erasureLocations_U, erasureLength_U, msg_U);
+        decoder.decodeWithErasures(encoded_U, encodedLength_U, erasureLocations_U, erasureLength_U, msg_U);
     }
 
     public RSTestbench (long bLength_U, long mDistance_U) {
@@ -55,8 +55,8 @@ public class RSTestbench {
             return run;
         }
         for(long i_U = 0; Long.compareUnsigned(i_U, msgLength_U) < 0; i_U++) {
- //           msg_U[(int)i_U] = (byte)((RANDOM.nextInt() & Integer.MAX_VALUE) % 256);
-            msg_U[(int)i_U] = (byte)((i_U & Integer.MAX_VALUE) % 256);
+           msg_U[(int)i_U] = (byte)((RANDOM.nextInt() & Integer.MAX_VALUE) % 256);
+///            msg_U[(int)i_U] = (byte)((i_U & Integer.MAX_VALUE) % 256);
         }
         long blockLength_U = msgLength_U + minDistance_U;
         long padLength_U = messageLength_U - msgLength_U;
@@ -71,16 +71,16 @@ public class RSTestbench {
 
         for(int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), numErasures_U) < 0; i_U++) {
             int index = indices[i_U];
-//            byte corruptionMask_U = (byte)((RANDOM.nextInt() & Integer.MAX_VALUE) % 255 + 1);
-            byte corruptionMask_U = (byte)((i_U & Integer.MAX_VALUE) % 255 + 1);
+            byte corruptionMask_U = (byte)((RANDOM.nextInt() & Integer.MAX_VALUE) % 255 + 1);
+///            byte corruptionMask_U = (byte)((i_U & Integer.MAX_VALUE) % 255 + 1);
             corruptedEncoded_U[index] ^= Byte.toUnsignedInt(corruptionMask_U);
             erasureLocations_U[i_U] = (byte)index;
         }
 
-        for(int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), numErrors_U) < 0; i_U++) {
+        for(int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U),numErrors_U) < 0; i_U++) {
             int index = indices[(int)(Integer.toUnsignedLong(i_U) + numErasures_U)];
-//            byte corruptionMask_U = (byte)(RANDOM.nextInt() % 255 + 1);
-            byte corruptionMask_U = (byte)(i_U % 255 + 1);
+            byte corruptionMask_U = (byte)(RANDOM.nextInt() % 255 + 1);
+///            byte corruptionMask_U = (byte)(i_U % 255 + 1);
             corruptedEncoded_U[index] ^= Byte.toUnsignedInt(corruptionMask_U);
         }
 
