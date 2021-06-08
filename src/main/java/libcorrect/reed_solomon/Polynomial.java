@@ -22,16 +22,6 @@ public class Polynomial implements Cloneable {
         coeff_U = Arrays.copyOf(coeff, order_U+1);
     }
 
-
-//    public Polynomial(Polynomial p) {
-//        order_U = p.order_U;
-//        coeff_U = Arrays.copyOf(p.coeff_U, order_U+1);
-//    }
-
-//    public Polynomial clone() {
-//        return new Polynomial(this);
-//    }
-
     public void copyCoeff(Polynomial p) {
         for (int i=0; i<p.coeff_U.length; i++) {
             coeff_U[i] = p.coeff_U[i];
