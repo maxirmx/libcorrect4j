@@ -9,42 +9,42 @@ public class ReedSolomonTest_D16 extends ReedSolomonTest {
     
     @Test
     void RS_T_1() {
-        runTests(Long.divideUnsigned(messageLength_U, 2), 0, 0, 20_000);
+        runTests(Long.divideUnsigned(messageLength, 2), 0, 0, 20_000);
     }
 
     @Test
     void RS_T_2() {
-        runTests(messageLength_U, 0, 0, 20_000);
+        runTests(messageLength, 0, 0, 20_000);
     }
 
     @Test
     void RS_T_3() {
-        runTests(Long.divideUnsigned(messageLength_U, 2), Long.divideUnsigned(minDistance_U, 2), 0, 20_000);
+        runTests(Long.divideUnsigned(messageLength, 2), Long.divideUnsigned(minDistance, 2), 0, 20_000);
     }
 
     @Test
     void RS_T_4() {
-        runTests(messageLength_U, Long.divideUnsigned(minDistance_U, 2), 0, 20_000);
+        runTests(messageLength, Long.divideUnsigned(minDistance, 2), 0, 20_000);
     }
 
     @Test
     void RS_T_5() {
-        runTests(Long.divideUnsigned(messageLength_U, 2), 0, minDistance_U, 20_000);
+        runTests(Long.divideUnsigned(messageLength, 2), 0, minDistance, 20_000);
     }
 
     @Test
     void RS_T_6() {
-        runTests(messageLength_U, 0, minDistance_U, 20_000);
+        runTests(messageLength, 0, minDistance, 20_000);
     }
 
     @Test
     void RS_T_7() {
-        runTests(Long.divideUnsigned(messageLength_U, 2), Long.divideUnsigned(minDistance_U, 4), Long.divideUnsigned(minDistance_U, 2), 20_000);
+        runTests(Long.divideUnsigned(messageLength, 2), Long.divideUnsigned(minDistance, 4), Long.divideUnsigned(minDistance, 2), 20_000);
     }
 
     @Test
     void RS_T_8() {
-        runTests(messageLength_U, Long.divideUnsigned(minDistance_U, 4), Long.divideUnsigned(minDistance_U, 2), 20_000);
+        runTests(messageLength, Long.divideUnsigned(minDistance, 4), Long.divideUnsigned(minDistance, 2), 20_000);
     }
 
     

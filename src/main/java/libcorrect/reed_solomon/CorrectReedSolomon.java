@@ -38,7 +38,7 @@ public class CorrectReedSolomon {
     private final byte firstConsecutiveRoot_U;
     private final byte generatorRootGap_U;
     private final Field field;
-    private Polynomial generator;
+    private final Polynomial generator;
     private final byte[] generatorRoots_U;
     private byte[][] generatorRootExp_U;
     private final Polynomial encodedPolynomial;
@@ -64,29 +64,17 @@ public class CorrectReedSolomon {
     private final Polynomial[] initFromRootsScratch = new Polynomial[2];
     private boolean hasInitDecode;
 
-    // coeff must be of size nroots + 1
-    // e.g. 2 roots (x + alpha)(x + alpha^2) yields a poly with 3 terms x^2 + g0*x + g1
-    private static Polynomial reedSolomonBuildGenerator(Field field, int nroots_U, byte firstConsecutiveRoot_U, int rootGap_U, Polynomial generator, byte[] roots_U) {
-        for (int i_U = 0; Integer.compareUnsigned(i_U, nroots_U) < 0; i_U++) {
-            roots_U[i_U] = field.exp_U[Integer.remainderUnsigned(rootGap_U * (i_U + Byte.toUnsignedInt(firstConsecutiveRoot_U)), 255)];
-        }
-        return polynomialCreateFromRoots(field, nroots_U, roots_U);
-
-    }
-    /* correct_reed_solomon_create allocates and initializes an
-     * encoder/decoder for a given reed solomon error correction
-     * code. The block size must be 255 bytes with 8-bit symbols.
-     *
-     * This block can repair corrupted bytes. It can handle as
-     * many as num_roots/2 bytes having corruption and still recover
-     * the encoded payload. However, using more num_roots
-     * adds more parity overhead and substantially increases
-     * the computational time for decoding.
-     *
-     * primitive_polynomial should be one of the given values in this
-     * file. Sane values for first_consecutive_root and
-     * generator_root_gap are 1 and 1. Not all combinations of
-     * values produce valid codes.
+    /**
+     *  correctReedSolomon allocates and initializes an encoder/decoder for a given
+     *  reed solomon error correction code. The block size must be 255 bytes with 8-bit symbols.
+     * @param primitivePolynomial           Should be one of the given values in this file
+     * @param firstConsecutiveRoot
+     * @param generatorRootGap              Sane values for firstConsecutiveRoot and generatorRootGap
+     *                                      are 1 and 1. Not all combinations of values produce valid codes.
+     * @param numRoots                      handle as many as numRoots/2 bytes having corruption
+     *                                      and still recover the encoded payload. However, using
+     *                                      more numRoots adds more parity overhead and substantially
+     *                                      increases the computational time for decoding.
      */
 
     public CorrectReedSolomon(short primitivePolynomial, byte firstConsecutiveRoot, byte generatorRootGap, long numRoots) {
@@ -99,7 +87,7 @@ public class CorrectReedSolomon {
         generatorRootGap_U = generatorRootGap;
         generatorRoots_U = new byte[(int) minDistance_U];
 
-        generator = reedSolomonBuildGenerator(field, (int) minDistance_U, firstConsecutiveRoot_U, generatorRootGap_U, generator, generatorRoots_U);
+        generator = reedSolomonBuildGenerator((int) minDistance_U,  generatorRoots_U);
 
         encodedPolynomial = new Polynomial((int) (blockLength_U - 1));
         encodedRemainder = new Polynomial((int) (blockLength_U - 1));
@@ -122,40 +110,39 @@ public class CorrectReedSolomon {
      * This function returns the number of bytes written to encoded.
      */
 
-    public long encode(byte[] msg_U, long msgLength_U, byte[] encoded_U) {
-        if (Long.compareUnsigned(msgLength_U, messageLength_U) > 0) {
+    public long encode(byte[] msg, long msgLength, byte[] encoded) {
+        if (Long.compareUnsigned(msgLength, messageLength_U) > 0) {
             return -1;
         }
 
-        long padLength_U = messageLength_U - msgLength_U;
+        long padLength_U = messageLength_U - msgLength;
 
         // 0-fill the rest of the coefficients -- this length will always be > 0
         // because the order of this poly is block_length and the msg_length <= message_length
         // e.g. 255 and 223
         encodedPolynomial.flushCoeff();
 
-        for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), msgLength_U) < 0; i_U++) {
+        for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), msgLength) < 0; i_U++) {
             // message goes from high order to low order but libcorrect polynomials go low to high
             // so we reverse on the way in and on the way out
             // we'd have to do a copy anyway so this reversal should be free
-            encodedPolynomial.setCoeff((int) (Integer.toUnsignedLong(encodedPolynomial.getOrder()) - (Integer.toUnsignedLong(i_U) + padLength_U)), msg_U[i_U]);
+            encodedPolynomial.setCoeff((int) (Integer.toUnsignedLong(encodedPolynomial.getOrder()) - (Integer.toUnsignedLong(i_U) + padLength_U)), msg[i_U]);
         }
 
         Polynomial.polynomialMod(field, encodedPolynomial, generator, encodedRemainder);
 
         // now return byte order to highest order to lowest order
-        for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), msgLength_U) < 0; i_U++) {
-            encoded_U[i_U] = encodedPolynomial.getCoeff((int) (Integer.toUnsignedLong(encodedPolynomial.getOrder()) - (Integer.toUnsignedLong(i_U) + padLength_U)));
+        for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), msgLength) < 0; i_U++) {
+            encoded[i_U] = encodedPolynomial.getCoeff((int) (Integer.toUnsignedLong(encodedPolynomial.getOrder()) - (Integer.toUnsignedLong(i_U) + padLength_U)));
         }
 
         for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), minDistance_U) < 0; i_U++) {
-            encoded_U[(int) (msgLength_U + Integer.toUnsignedLong(i_U))] = encodedRemainder.getCoeff((int) (minDistance_U - Integer.toUnsignedLong(i_U + 1)));
+            encoded[(int) (msgLength + Integer.toUnsignedLong(i_U))] = encodedRemainder.getCoeff((int) (minDistance_U - Integer.toUnsignedLong(i_U + 1)));
         }
 
         return blockLength_U;
 
     }
-
 
     /* correct_reed_solomon_decode uses the rs instance to decode
      * a payload from a block containing payload and parity bytes.
@@ -248,19 +235,17 @@ public class CorrectReedSolomon {
         return msgLength_U;
     }
 
-    /* correct_reed_solomon_decode_with_erasures uses the rs
-     * instance to decode a payload from a block containing payload
-     * and parity bytes. Additionally, the user can provide the
-     * indices of bytes which have been suspected to be corrupted.
-     * This erasure information is typically provided by a demodulating
-     * or receiving device. This function can recover with
-     * some additional errors on top of the erasures.
+     /**
+     * decodeWithErasures decodes a payload from a block containing payload
+     * and parity bytes. Additionally, the user can provide the indices of bytes
+     * which have been suspected to be corrupted.
+     * This erasure information is typically provided by a demodulating or receiving device.
+     * This function can recover with some additional errors on top of the erasures.
      *
-     * In order to successfully decode, the quantity
-     * (num_erasures + 2*num_errors) must be less than
-     * num_roots.
+     * In order to successfully decode, the quantity (numErasures + 2*numErrors) must be less than
+     * numRoots.
      *
-     * erasure_locations shold contain erasure_length items.
+     * erasure_locations should contain erasure_length items.
      * erasure_length should not exceed the number of parity
      * bytes encoded into this block.
      *
@@ -271,11 +256,15 @@ public class CorrectReedSolomon {
      *
      * msg should be long enough to contain a decoded payload for
      * this encoded block.
-     *
-     * This function returns a positive number of bytes written to msg
-     * if it has decoded or -1 if it has encountered an error.
+     * @param encoded_U
+     * @param encodedLength_U
+     * @param erasureLocations_U
+     * @param erasureLength_U
+     * @param msg_U
+     * @return a positive number of bytes written to msg if it has decoded or -1 if it has encountered an error.
      */
     public long decodeWithErasures(byte[] encoded_U, long encodedLength_U, byte[] erasureLocations_U, long erasureLength_U, byte[] msg_U) {
+
         if (erasureLength_U == 0) {
             return decode(encoded_U, encodedLength_U, msg_U);
         }
@@ -353,12 +342,6 @@ public class CorrectReedSolomon {
             errorLocatorLog.setCoeff(i_U, field.log_U[(Byte.toUnsignedInt(errorLocator.getCoeff(i_U)))]);
         }
         errorLocatorLog.setOrder(errorLocator.getOrder());
-
-    /*
-    for (unsigned int i = 0; i < erasure_length; i++) {
-        rs->error_roots[i] = field_div(rs->field, 1, rs->error_roots[i]);
-    }
-    */
 
         if (!factorizeErrorLocator((int) erasureLength_U, errorLocatorLog, errorRoots_U, elementExp_U)) {
             // roots couldn't be found, so there were too many errors to deal with
@@ -675,6 +658,17 @@ public class CorrectReedSolomon {
 
         initFromRootsScratch[0] = new Polynomial((int) minDistance_U);
         initFromRootsScratch[1] = new Polynomial((int) minDistance_U);
+
+    }
+
+    // coeff must be of size nroots + 1
+    // e.g. 2 roots (x + alpha)(x + alpha^2) yields a poly with 3 terms x^2 + g0*x + g1
+    private Polynomial reedSolomonBuildGenerator(int nroots_U,  byte[] roots_U) {
+        for (int i_U = 0; Integer.compareUnsigned(i_U, nroots_U) < 0; i_U++) {
+            roots_U[i_U] = field.exp_U[Integer.remainderUnsigned(
+                    generatorRootGap_U * (i_U + Byte.toUnsignedInt(firstConsecutiveRoot_U)), 255)];
+        }
+        return polynomialCreateFromRoots(field, nroots_U, roots_U);
 
     }
 

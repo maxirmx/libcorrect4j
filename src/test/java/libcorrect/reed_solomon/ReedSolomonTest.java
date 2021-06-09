@@ -1,29 +1,26 @@
 package libcorrect.reed_solomon;
 
-import java.util.Random;
 import static libcorrect.reed_solomon.CorrectReedSolomon.correctRsPrimitivePolynomialCcsds;
 
 public class ReedSolomonTest {
- //   protected final Random RANDOM = new Random(1);
-    
-    protected final long blockLength_U = 255;
-    protected long minDistance_U;
-    protected long messageLength_U;
+    protected final long blockLength = 255;
+    protected long minDistance;
+    protected long messageLength;
     protected CorrectReedSolomon rs;
-    protected RSTestbench testbench;
+    protected RSTestBench testBench;
     
     protected void init(long mDistance) {
-        minDistance_U = mDistance;
-        messageLength_U = blockLength_U - minDistance_U;
-//        RANDOM.setSeed(System.currentTimeMillis());
-        rs = new CorrectReedSolomon(correctRsPrimitivePolynomialCcsds, (byte)1, (byte)1, minDistance_U);
-        testbench = new RSTestbench(blockLength_U, minDistance_U);
+        minDistance = mDistance;
+        messageLength = blockLength - minDistance;
+        rs = new CorrectReedSolomon(correctRsPrimitivePolynomialCcsds, (byte)1, (byte)1, minDistance);
+        testBench = new RSTestBench(blockLength, minDistance);
     }
   
-    protected void runTests(long testMsgLength_U, long numErrors_U, long numErasures_U, long numIterations_U) {
-        System.out.printf("testing reed solomon block length=%d, message length=%d, errors=%d, erasures=%d...", blockLength_U, testMsgLength_U, numErrors_U, numErasures_U);
-        for (long i_U = 0; Long.compareUnsigned(i_U, numIterations_U) < 0; i_U++) {
-            RsTestRun run = testbench.testRsErrors(rs, testMsgLength_U, numErrors_U, numErasures_U);
+    protected void runTests(long testMsgLength, long numErrors, long numErasures, long numIterations) {
+        System.out.printf("testing reed solomon block length=%d, message length=%d, errors=%d, erasures=%d...",
+                            blockLength, testMsgLength, numErrors, numErasures);
+        for (int i = 0; i < numIterations; i++) {
+            RsTestRun run = testBench.testRsErrors(rs, testMsgLength, numErrors, numErasures);
             assert run.getOutputMatches();
         }
         System.out.println("PASSED");
