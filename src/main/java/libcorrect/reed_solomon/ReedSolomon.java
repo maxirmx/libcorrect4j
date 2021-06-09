@@ -11,7 +11,7 @@ import java.util.Arrays;
 
 import static libcorrect.reed_solomon.Polynomial.*;
 
-public class CorrectReedSolomon {
+public class ReedSolomon {
     public static final short correctRsPrimitivePolynomial_8_4_3_2_0 = 0x11d;        // x^8 + x^4 + x^3 + x^2 + 1
     public static final short correctRsPrimitivePolynomial_8_5_3_1_0 = 0x12b;        // x^8 + x^5 + x^3 + x + 1
     public static final short correctRsPrimitivePolynomial_8_5_3_2_0 = 0x12d;        // x^8 + x^5 + x^3 + x^2 + 1
@@ -77,7 +77,7 @@ public class CorrectReedSolomon {
      *                                      increases the computational time for decoding.
      */
 
-    public CorrectReedSolomon(short primitivePolynomial, byte firstConsecutiveRoot, byte generatorRootGap, long numRoots) {
+    public ReedSolomon(short primitivePolynomial, byte firstConsecutiveRoot, byte generatorRootGap, long numRoots) {
         field = new Field(primitivePolynomial);
         blockLength = 255;
         minDistance = numRoots;
@@ -110,7 +110,7 @@ public class CorrectReedSolomon {
         byte[] encoded = new byte[(int) (msgLength+minDistance)];
 
         if (Long.compareUnsigned(msgLength, maxMessageLength) > 0) {
-            throw new IllegalArgumentException("CorrectReedSolomon.encode: message length must be smaller than block length - min. distance");
+            throw new IllegalArgumentException("ReedSolomon.encode: message length must be smaller than block length - min. distance");
         }
 
         long padLength = maxMessageLength - msgLength;
@@ -157,7 +157,7 @@ public class CorrectReedSolomon {
         long encodedLength = encoded.length;
 
         if (Long.compareUnsigned(encodedLength, blockLength) > 0) {
-            throw new IllegalArgumentException("CorrectReedSolomon.decode: encoded message length must be smaller than block length");
+            throw new IllegalArgumentException("ReedSolomon.decode: encoded message length must be smaller than block length");
         }
 
         // the message is the non-remainder part
@@ -282,10 +282,10 @@ public class CorrectReedSolomon {
 
         long encodedLength = encoded.length;
         if (Long.compareUnsigned(encodedLength, blockLength) > 0) {
-            throw new IllegalArgumentException("CorrectReedSolomon.decodeWithErasures: encoded message length must be smaller than block length");
+            throw new IllegalArgumentException("ReedSolomon.decodeWithErasures: encoded message length must be smaller than block length");
         }
         if (Long.compareUnsigned(erasureLength, minDistance) > 0) {
-            throw new IllegalArgumentException("CorrectReedSolomon.decodeWithErasures: erasures  length must be smaller than min distance");
+            throw new IllegalArgumentException("ReedSolomon.decodeWithErasures: erasures  length must be smaller than min distance");
         }
 
         // the message is the non-remainder part

@@ -1,18 +1,18 @@
 package libcorrect.reed_solomon;
 
-import static libcorrect.reed_solomon.CorrectReedSolomon.correctRsPrimitivePolynomialCcsds;
+import static libcorrect.reed_solomon.ReedSolomon.correctRsPrimitivePolynomialCcsds;
 
 public class ReedSolomonTest {
     protected final long blockLength = 255;
     protected long minDistance;
     protected long messageLength;
-    protected CorrectReedSolomon rs;
+    protected ReedSolomon rs;
     protected RSTestBench testBench;
     
     protected void init(long mDistance) {
         minDistance = mDistance;
         messageLength = blockLength - minDistance;
-        rs = new CorrectReedSolomon(correctRsPrimitivePolynomialCcsds, (byte)1, (byte)1, minDistance);
+        rs = new ReedSolomon(correctRsPrimitivePolynomialCcsds, (byte)1, (byte)1, minDistance);
         testBench = new RSTestBench(blockLength, minDistance);
     }
   

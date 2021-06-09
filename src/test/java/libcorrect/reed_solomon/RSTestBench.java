@@ -28,7 +28,7 @@ public class RSTestBench {
         erasureLocations = new byte[(int) minDistance];
     }
 
-    public RsTestRun testRsErrors(CorrectReedSolomon test, long msgLength, long numErrors, long numErasures) {
+    public RsTestRun testRsErrors(ReedSolomon test, long msgLength, long numErrors, long numErasures) {
         RsTestRun run = new RsTestRun();
         run.setOutputMatches(false);
         if(Long.compareUnsigned(msgLength, messageLength) > 0) {
