@@ -24,63 +24,63 @@ public class RSTestBench {
         }
     }
 
-    public static void rsCorrectEncode(CorrectReedSolomon  encoder, byte[] msg_U, long msgLength_U, byte[] msgOut_U) {
-        encoder.encode(msg_U, msgLength_U, msgOut_U);
+    public static void rsCorrectEncode(CorrectReedSolomon  encoder, byte[] msg, long msgLength, byte[] msgOut) {
+        encoder.encode(msg, msgLength, msgOut);
     }
 
-    public static void rsCorrectDecode(CorrectReedSolomon decoder, byte[] encoded_U, long encodedLength_U, byte[] erasureLocations_U,
-                                       long erasureLength_U, byte[] msg_U, long padLength_U, long numRoots_U) {
-        decoder.decodeWithErasures(encoded_U, encodedLength_U, erasureLocations_U, erasureLength_U, msg_U);
+    public static void rsCorrectDecode(CorrectReedSolomon decoder, byte[] encoded, long encodedLength, byte[] erasureLocations,
+                                       long erasureLength, byte[] msg, long padLength, long numRoots) {
+        decoder.decodeWithErasures(encoded, encodedLength, erasureLocations, erasureLength, msg);
     }
 
-    public RSTestBench(long bLength_U, long mDistance_U) {
+    public RSTestBench(long bLength, long mDistance) {
 
-        messageLength = bLength_U - mDistance_U;
-        minDistance = mDistance_U;
+        messageLength = bLength - mDistance;
+        minDistance = mDistance;
         msg = new byte[(int) messageLength];
-        encoded =  new byte[(int) bLength_U];
-        indices = new int[(int) bLength_U];
+        encoded =  new byte[(int) bLength];
+        indices = new int[(int) bLength];
 
-        corruptedEncoded = new byte[(int) bLength_U];
+        corruptedEncoded = new byte[(int) bLength];
         erasureLocations = new byte[(int) minDistance];
         recvMsg = new byte[(int) messageLength];
     }
 
-    public RsTestRun testRsErrors(CorrectReedSolomon test, long msgLength_U, long numErrors_U, long numErasures_U) {
+    public RsTestRun testRsErrors(CorrectReedSolomon test, long msgLength, long numErrors, long numErasures) {
         RsTestRun run = new RsTestRun();
         run.setOutputMatches(false);
-        if(Long.compareUnsigned(msgLength_U, messageLength) > 0) {
+        if(Long.compareUnsigned(msgLength, messageLength) > 0) {
             return run;
         }
-        for(long i_U = 0; Long.compareUnsigned(i_U, msgLength_U) < 0; i_U++) {
-           msg[(int)i_U] = (byte)((RANDOM.nextInt() & Integer.MAX_VALUE) % 256);
+        for(long i = 0; Long.compareUnsigned(i, msgLength) < 0; i++) {
+           msg[(int)i] = (byte)((RANDOM.nextInt() & Integer.MAX_VALUE) % 256);
         }
-        long blockLength_U = msgLength_U + minDistance;
-        long padLength_U = messageLength - msgLength_U;
+        long blockLength = msgLength + minDistance;
+        long padLength = messageLength - msgLength;
 
-        rsCorrectEncode(test, msg, msgLength_U, encoded);
+        rsCorrectEncode(test, msg, msgLength, encoded);
 
-        corruptedEncoded = Arrays.copyOf(encoded, (int)blockLength_U);
-        for(int i = 0; Long.compareUnsigned(i, blockLength_U) < 0; i++) {
+        corruptedEncoded = Arrays.copyOf(encoded, (int)blockLength);
+        for(int i = 0; Long.compareUnsigned(i, blockLength) < 0; i++) {
             indices[i] = i;
         }
-        shuffle(indices, blockLength_U);
+        shuffle(indices, blockLength);
 
-        for(int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), numErasures_U) < 0; i_U++) {
-            int index = indices[i_U];
-            byte corruptionMask_U = (byte)((RANDOM.nextInt() & Integer.MAX_VALUE) % 255 + 1);
-            corruptedEncoded[index] ^= Byte.toUnsignedInt(corruptionMask_U);
-            erasureLocations[i_U] = (byte)index;
+        for(int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), numErasures) < 0; i++) {
+            int index = indices[i];
+            byte corruptionMask = (byte)((RANDOM.nextInt() & Integer.MAX_VALUE) % 255 + 1);
+            corruptedEncoded[index] ^= Byte.toUnsignedInt(corruptionMask);
+            erasureLocations[i] = (byte)index;
         }
 
-        for(int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U),numErrors_U) < 0; i_U++) {
-            int index = indices[(int)(Integer.toUnsignedLong(i_U) + numErasures_U)];
-            byte corruptionMask_U = (byte)(RANDOM.nextInt() % 255 + 1);
-            corruptedEncoded[index] ^= Byte.toUnsignedInt(corruptionMask_U);
+        for(int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i),numErrors) < 0; i++) {
+            int index = indices[(int)(Integer.toUnsignedLong(i) + numErasures)];
+            byte corruptionMask = (byte)(RANDOM.nextInt() % 255 + 1);
+            corruptedEncoded[index] ^= Byte.toUnsignedInt(corruptionMask);
         }
 
-        rsCorrectDecode(test, corruptedEncoded, blockLength_U, erasureLocations, numErasures_U,
-                recvMsg, padLength_U, minDistance);
+        rsCorrectDecode(test, corruptedEncoded, blockLength, erasureLocations, numErasures,
+                recvMsg, padLength, minDistance);
 
         run.setOutputMatches(Arrays.equals(msg, recvMsg));
 

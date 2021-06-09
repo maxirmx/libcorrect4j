@@ -122,22 +122,22 @@ public class CorrectReedSolomon {
         // e.g. 255 and 223
         encodedPolynomial.flushCoeff();
 
-        for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), msgLength) < 0; i_U++) {
+        for (int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), msgLength) < 0; i++) {
             // message goes from high order to low order but libcorrect polynomials go low to high
             // so we reverse on the way in and on the way out
             // we'd have to do a copy anyway so this reversal should be free
-            encodedPolynomial.setCoeff((int) (Integer.toUnsignedLong(encodedPolynomial.getOrder()) - (Integer.toUnsignedLong(i_U) + padLength_U)), msg[i_U]);
+            encodedPolynomial.setCoeff((int) (Integer.toUnsignedLong(encodedPolynomial.getOrder()) - (Integer.toUnsignedLong(i) + padLength_U)), msg[i]);
         }
 
         Polynomial.polynomialMod(field, encodedPolynomial, generator, encodedRemainder);
 
         // now return byte order to highest order to lowest order
-        for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), msgLength) < 0; i_U++) {
-            encoded[i_U] = encodedPolynomial.getCoeff((int) (Integer.toUnsignedLong(encodedPolynomial.getOrder()) - (Integer.toUnsignedLong(i_U) + padLength_U)));
+        for (int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), msgLength) < 0; i++) {
+            encoded[i] = encodedPolynomial.getCoeff((int) (Integer.toUnsignedLong(encodedPolynomial.getOrder()) - (Integer.toUnsignedLong(i) + padLength_U)));
         }
 
-        for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), minDistance_U) < 0; i_U++) {
-            encoded[(int) (msgLength + Integer.toUnsignedLong(i_U))] = encodedRemainder.getCoeff((int) (minDistance_U - Integer.toUnsignedLong(i_U + 1)));
+        for (int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), minDistance_U) < 0; i++) {
+            encoded[(int) (msgLength + Integer.toUnsignedLong(i))] = encodedRemainder.getCoeff((int) (minDistance_U - Integer.toUnsignedLong(i + 1)));
         }
 
         return blockLength_U;
@@ -182,13 +182,13 @@ public class CorrectReedSolomon {
         // the final copied buffer will look like
         // | rem (rs->min_distance) | msg (msg_length) | pad (pad_length) |
 
-        for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), encodedLength_U) < 0; i_U++) {
-            receivedPolynomial.setCoeff(i_U, encoded_U[(int) (encodedLength_U - (i_U + 1))]);
+        for (int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), encodedLength_U) < 0; i++) {
+            receivedPolynomial.setCoeff(i, encoded_U[(int) (encodedLength_U - (i + 1))]);
         }
 
         // fill the pad_length with 0s
-        for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), padLength_U) < 0; i_U++) {
-            receivedPolynomial.setCoeff((int) (Integer.toUnsignedLong(i_U) + encodedLength_U), (byte) 0);
+        for (int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), padLength_U) < 0; i++) {
+            receivedPolynomial.setCoeff((int) (Integer.toUnsignedLong(i) + encodedLength_U), (byte) 0);
         }
 
 
@@ -197,8 +197,8 @@ public class CorrectReedSolomon {
         if (allZero) {
             // syndromes were all zero, so there was no error in the message
             // copy to msg and we are done
-            for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), msgLength_U) < 0; i_U++) {
-                msg_U[i_U] = receivedPolynomial.getCoeff((int) (encodedLength_U - Integer.toUnsignedLong(i_U + 1)));
+            for (int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), msgLength_U) < 0; i++) {
+                msg_U[i] = receivedPolynomial.getCoeff((int) (encodedLength_U - Integer.toUnsignedLong(i + 1)));
             }
             return msgLength_U;
         }
@@ -206,13 +206,13 @@ public class CorrectReedSolomon {
         // XXX fix this vvvv
         errorLocator.setOrder(order_U);
 
-        for (int i_U = 0; Integer.compareUnsigned(i_U, errorLocator.getOrder()) <= 0; i_U++) {
+        for (int i = 0; Integer.compareUnsigned(i, errorLocator.getOrder()) <= 0; i++) {
             // this is a little strange since the coeffs are logs, not elements
             // also, we'll be storing log(0) = 0 for any 0 coeffs in the error locator
             // that would seem bad but we'll just be using this in chien search, and we'll skip all 0 coeffs
             // (you might point out that log(1) also = 0, which would seem to alias. however, that's ok,
             //   because log(1) = 255 as well, and in fact that's how it's represented in our log table)
-            errorLocatorLog.setCoeff(i_U, field.log_U[Byte.toUnsignedInt(errorLocator.getCoeff(i_U))]);
+            errorLocatorLog.setCoeff(i, field.log_U[Byte.toUnsignedInt(errorLocator.getCoeff(i))]);
         }
         errorLocatorLog.setOrder(errorLocator.getOrder());
         if (!factorizeErrorLocator(0, errorLocatorLog, errorRoots_U, elementExp_U)) {
@@ -224,13 +224,13 @@ public class CorrectReedSolomon {
         findErrorLocations(generatorRootGap_U, errorRoots_U, errorLocations_U, errorLocator.getOrder(), 0);
         findErrorValues();
 
-        for (int i_U = 0; Integer.compareUnsigned(i_U, errorLocator.getOrder()) < 0; i_U++) {
-            receivedPolynomial.setCoeff(Byte.toUnsignedInt(errorLocations_U[i_U]),
-                    field.fieldSub(receivedPolynomial.getCoeff(Byte.toUnsignedInt(errorLocations_U[i_U])), errorVals_U[i_U]));
+        for (int i = 0; Integer.compareUnsigned(i, errorLocator.getOrder()) < 0; i++) {
+            receivedPolynomial.setCoeff(Byte.toUnsignedInt(errorLocations_U[i]),
+                    field.fieldSub(receivedPolynomial.getCoeff(Byte.toUnsignedInt(errorLocations_U[i])), errorVals_U[i]));
         }
 
-        for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), msgLength_U) < 0; i_U++) {
-            msg_U[i_U] = receivedPolynomial.getCoeff((int) (encodedLength_U - Integer.toUnsignedLong(i_U + 1)));
+        for (int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), msgLength_U) < 0; i++) {
+            msg_U[i] = receivedPolynomial.getCoeff((int) (encodedLength_U - Integer.toUnsignedLong(i + 1)));
         }
         return msgLength_U;
     }
@@ -292,18 +292,18 @@ public class CorrectReedSolomon {
         // the final copied buffer will look like
         // | rem (rs->min_distance) | msg (msg_length) | pad (pad_length) |
 
-        for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), encodedLength_U) < 0; i_U++) {
-            receivedPolynomial.setCoeff(i_U, encoded_U[(int) (encodedLength_U - Integer.toUnsignedLong(i_U + 1))]);
+        for (int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), encodedLength_U) < 0; i++) {
+            receivedPolynomial.setCoeff(i, encoded_U[(int) (encodedLength_U - Integer.toUnsignedLong(i + 1))]);
         }
 
         // fill the pad_length with 0s
-        for (int i_U = 0; Integer.toUnsignedLong(i_U) < padLength_U; i_U++) {
-            receivedPolynomial.setCoeff((int) (Integer.toUnsignedLong(i_U) + encodedLength_U), (byte) 0);
+        for (int i = 0; Integer.toUnsignedLong(i) < padLength_U; i++) {
+            receivedPolynomial.setCoeff((int) (Integer.toUnsignedLong(i) + encodedLength_U), (byte) 0);
         }
 
-        for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), erasureLength_U) < 0; i_U++) {
+        for (int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), erasureLength_U) < 0; i++) {
             // remap the coordinates of the erasures
-            errorLocations_U[i_U] = (byte) (blockLength_U - (Byte.toUnsignedLong(erasureLocations_U[i_U]) + padLength_U + 1));
+            errorLocations_U[i] = (byte) (blockLength_U - (Byte.toUnsignedLong(erasureLocations_U[i]) + padLength_U + 1));
         }
 
         findErrorRootsFromLocations(generatorRootGap_U, errorLocations_U, errorRoots_U, (int) erasureLength_U);
@@ -315,8 +315,8 @@ public class CorrectReedSolomon {
         if (allZero) {
             // syndromes were all zero, so there was no error in the message
             // copy to msg and we are done
-            for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), msgLength_U) < 0; i_U++) {
-                msg_U[i_U] = receivedPolynomial.getCoeff((int) (encodedLength_U - Integer.toUnsignedLong(i_U + 1)));
+            for (int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), msgLength_U) < 0; i++) {
+                msg_U[i] = receivedPolynomial.getCoeff((int) (encodedLength_U - Integer.toUnsignedLong(i + 1)));
                 return msgLength_U;
             }
         }
@@ -325,21 +325,21 @@ public class CorrectReedSolomon {
 
         byte[] syndromeCopy_U = Arrays.copyOf(syndromes_U, (int) minDistance_U);
 
-        for (int i_U = (int) erasureLength_U; Long.compareUnsigned(Integer.toUnsignedLong(i_U), minDistance_U) < 0; i_U++) {
-            syndromes_U[(int) (Integer.toUnsignedLong(i_U) - erasureLength_U)] = modifiedSyndromes_U[i_U];
+        for (int i = (int) erasureLength_U; Long.compareUnsigned(Integer.toUnsignedLong(i), minDistance_U) < 0; i++) {
+            syndromes_U[(int) (Integer.toUnsignedLong(i) - erasureLength_U)] = modifiedSyndromes_U[i];
         }
 
         int order_U = findErrorLocator(erasureLength_U);
         // XXX fix this vvvv
         errorLocator.setOrder(order_U);
 
-        for (int i_U = 0; Integer.compareUnsigned(i_U, errorLocator.getOrder()) <= 0; i_U++) {
+        for (int i = 0; Integer.compareUnsigned(i, errorLocator.getOrder()) <= 0; i++) {
             // this is a little strange since the coeffs are logs, not elements
             // also, we'll be storing log(0) = 0 for any 0 coeffs in the error locator
             // that would seem bad but we'll just be using this in chien search, and we'll skip all 0 coeffs
             // (you might point out that log(1) also = 0, which would seem to alias. however, that's ok,
             //   because log(1) = 255 as well, and in fact that's how it's represented in our log table)
-            errorLocatorLog.setCoeff(i_U, field.log_U[(Byte.toUnsignedInt(errorLocator.getCoeff(i_U)))]);
+            errorLocatorLog.setCoeff(i, field.log_U[(Byte.toUnsignedInt(errorLocator.getCoeff(i)))]);
         }
         errorLocatorLog.setOrder(errorLocator.getOrder());
 
@@ -359,14 +359,14 @@ public class CorrectReedSolomon {
         syndromes_U = Arrays.copyOf(syndromeCopy_U, (int) minDistance_U);
         findErrorValues();
 
-        for (int i_U = 0; Integer.compareUnsigned(i_U, errorLocator.getOrder()) < 0; i_U++) {
-            receivedPolynomial.setCoeff(Byte.toUnsignedInt(errorLocations_U[i_U]),
-                    field.fieldSub(receivedPolynomial.getCoeff(Byte.toUnsignedInt(errorLocations_U[i_U])), errorVals_U[i_U]));
+        for (int i = 0; Integer.compareUnsigned(i, errorLocator.getOrder()) < 0; i++) {
+            receivedPolynomial.setCoeff(Byte.toUnsignedInt(errorLocations_U[i]),
+                    field.fieldSub(receivedPolynomial.getCoeff(Byte.toUnsignedInt(errorLocations_U[i])), errorVals_U[i]));
         }
 
         errorLocator = placeholderPoly;
-        for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), msgLength_U) < 0; i_U++) {
-            msg_U[i_U] = receivedPolynomial.getCoeff((int) (encodedLength_U - Integer.toUnsignedLong(i_U + 1)));
+        for (int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), msgLength_U) < 0; i++) {
+            msg_U[i] = receivedPolynomial.getCoeff((int) (encodedLength_U - Integer.toUnsignedLong(i + 1)));
         }
         return msgLength_U;
     }
@@ -386,16 +386,16 @@ public class CorrectReedSolomon {
     private boolean findSyndromes(Polynomial msgpoly) {
         boolean allZero = true;
         Arrays.fill(syndromes_U, 0, (int) minDistance_U, (byte) 0);
-        for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), minDistance_U) < 0; i_U++) {
+        for (int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), minDistance_U) < 0; i++) {
             // profiling reveals that this function takes about 50% of the cpu time of
             // decoding. so, in order to speed it up a little, we precompute and save
             // the successive powers of the roots of the generator, which are
             // located in generator_root_exp
-            byte eval_U = msgpoly.polynomialEvalLut(field, generatorRootExp_U[i_U]);
+            byte eval_U = msgpoly.polynomialEvalLut(field, generatorRootExp_U[i]);
             if (eval_U != 0) {
                 allZero = false;
             }
-            syndromes_U[i_U] = eval_U;
+            syndromes_U[i] = eval_U;
         }
         return allZero;
     }
@@ -420,10 +420,10 @@ public class CorrectReedSolomon {
         byte lastDiscrepancy_U = 1;
         int delayLength_U = 1;
 
-        for (int i_U = errorLocator.getOrder(); Long.compareUnsigned(Integer.toUnsignedLong(i_U), minDistance_U - numErasures) < 0; i_U++) {
-            discrepancy_U = syndromes_U[i_U];
-            for (int j_U = 1; Integer.compareUnsigned(j_U, numerrors_U) <= 0; j_U++) {
-                discrepancy_U = (byte) field.fieldAdd(discrepancy_U, field.fieldMul(errorLocator.getCoeff(j_U), syndromes_U[i_U - j_U]));
+        for (int i = errorLocator.getOrder(); Long.compareUnsigned(Integer.toUnsignedLong(i), minDistance_U - numErasures) < 0; i++) {
+            discrepancy_U = syndromes_U[i];
+            for (int j = 1; Integer.compareUnsigned(j, numerrors_U) <= 0; j++) {
+                discrepancy_U = (byte) field.fieldAdd(discrepancy_U, field.fieldMul(errorLocator.getCoeff(j), syndromes_U[i - j]));
             }
 
             if (discrepancy_U == 0) {
@@ -434,7 +434,7 @@ public class CorrectReedSolomon {
                 continue;
             }
 
-            if (Integer.compareUnsigned(2 * numerrors_U, i_U) <= 0) {
+            if (Integer.compareUnsigned(2 * numerrors_U, i) <= 0) {
                 // there's a discrepancy, but we still have room for more taps
                 // lengthen LFSR by one tap and set weight to eliminate discrepancy
 
@@ -465,7 +465,7 @@ public class CorrectReedSolomon {
                 // now last_locator is locator before we started,
                 //   and locator is (locator - (discrepancy/last_discrepancy) * x^(delay_length) * last_locator)
 
-                numerrors_U = i_U + 1 - numerrors_U;
+                numerrors_U = i + 1 - numerrors_U;
                 lastDiscrepancy_U = discrepancy_U;
                 delayLength_U = 1;
                 continue;
@@ -476,9 +476,9 @@ public class CorrectReedSolomon {
             //    but we'll update locator as before
             // we're basically flattening the two loops from the previous case because
             //    we no longer need to update last_locator
-            for (int j_U = lastErrorLocator.getOrder(); j_U >= 0; j_U--) {
-                errorLocator.setCoeff(j_U + delayLength_U, (byte) field.fieldAdd(errorLocator.getCoeff(j_U + delayLength_U),
-                        field.fieldDiv(field.fieldMul(lastErrorLocator.getCoeff(j_U), discrepancy_U), lastDiscrepancy_U)));
+            for (int j = lastErrorLocator.getOrder(); j >= 0; j--) {
+                errorLocator.setCoeff(j + delayLength_U, (byte) field.fieldAdd(errorLocator.getCoeff(j + delayLength_U),
+                        field.fieldDiv(field.fieldMul(lastErrorLocator.getCoeff(j), discrepancy_U), lastDiscrepancy_U)));
             }
             errorLocator.setOrder(Integer.compareUnsigned(lastErrorLocator.getOrder() + delayLength_U, errorLocator.getOrder()) > 0 ?
                     lastErrorLocator.getOrder() + delayLength_U : errorLocator.getOrder());
@@ -503,15 +503,15 @@ public class CorrectReedSolomon {
         for (int i = 0; i < locatorLog.getOrder(); i++) {
             roots[numSkip + i] = 0;
         }
-        for (short i_U = 0; Short.toUnsignedInt(i_U) < 256; i_U++) {
+        for (short i = 0; Short.toUnsignedInt(i) < 256; i++) {
             // we make two optimizations here to help this search go faster
             // a) we have precomputed the first successive powers of every single element
             //   in the field. we need at most n powers, where n is the largest possible
             //   degree of the error locator
             // b) we have precomputed the error locator polynomial in log form, which
             //   helps reduce some lookups that would be done here
-            if (locatorLog.polynomialEvalLogLut(field, elementExp[Short.toUnsignedInt(i_U)]) == 0) {
-                roots[root_U] = (byte) i_U;
+            if (locatorLog.polynomialEvalLogLut(field, elementExp[Short.toUnsignedInt(i)]) == 0) {
+                roots[root_U] = (byte) i;
                 root_U++;
             }
         }
@@ -557,14 +557,14 @@ public class CorrectReedSolomon {
         polynomialFormalDerivative(field, errorLocator, errorLocatorDerivative);
 
         // calculate each e(j)
-        for (int i_U = 0; Integer.compareUnsigned(i_U, errorLocator.getOrder()) < 0; i_U++) {
-            if (Byte.toUnsignedInt(errorRoots_U[i_U]) == 0) {
+        for (int i = 0; Integer.compareUnsigned(i, errorLocator.getOrder()) < 0; i++) {
+            if (Byte.toUnsignedInt(errorRoots_U[i]) == 0) {
                 continue;
             }
-            errorVals_U[i_U] = field.fieldMul(field.fieldPow(errorRoots_U[i_U], Byte.toUnsignedInt(firstConsecutiveRoot_U) - 1),
+            errorVals_U[i] = field.fieldMul(field.fieldPow(errorRoots_U[i], Byte.toUnsignedInt(firstConsecutiveRoot_U) - 1),
                     field.fieldDiv(
-                            errorEvaluator.polynomialEvalLut(field, elementExp_U[Byte.toUnsignedInt(errorRoots_U[i_U])]),
-                            errorLocatorDerivative.polynomialEvalLut(field, elementExp_U[Byte.toUnsignedInt(errorRoots_U[i_U])])));
+                            errorEvaluator.polynomialEvalLut(field, elementExp_U[Byte.toUnsignedInt(errorRoots_U[i])]),
+                            errorLocatorDerivative.polynomialEvalLut(field, elementExp_U[Byte.toUnsignedInt(errorRoots_U[i])])));
         }
     }
 
@@ -595,10 +595,10 @@ public class CorrectReedSolomon {
     // erasure method -- take given locations and convert to roots
 // this is the inverse of reed_solomon_find_error_locations
     private void findErrorRootsFromLocations(byte generatorRootGap_U, byte[] errorLocations_U, byte[] errorRoots_U, int numErrors_U) {
-        for (int i_U = 0; Integer.compareUnsigned(i_U, numErrors_U) < 0; i_U++) {
-            byte loc_U = field.fieldPow(field.exp_U[Byte.toUnsignedInt(errorLocations_U[i_U])], generatorRootGap_U);
+        for (int i = 0; Integer.compareUnsigned(i, numErrors_U) < 0; i++) {
+            byte loc_U = field.fieldPow(field.exp_U[Byte.toUnsignedInt(errorLocations_U[i])], generatorRootGap_U);
             // field_element_t loc = field.exp[error_locations[i]];
-            errorRoots_U[i_U] = field.fieldDiv((byte) 1, loc_U);
+            errorRoots_U[i] = field.fieldDiv((byte) 1, loc_U);
         }
 
     }
@@ -641,9 +641,9 @@ public class CorrectReedSolomon {
         // if we save it, we can prevent the need to recalculate it on subsequent calls
         // total memory usage is min_distance * block_length bytes e.g. 32 * 255 ~= 8k
         generatorRootExp_U = new byte[(int) minDistance_U][];
-        for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), minDistance_U) < 0; i_U++) {
-            generatorRootExp_U[i_U] = new byte[(int) blockLength_U];
-            polynomialBuildExpLut(field, generatorRoots_U[i_U], (int) (blockLength_U - 1), generatorRootExp_U[i_U]);
+        for (int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), minDistance_U) < 0; i++) {
+            generatorRootExp_U[i] = new byte[(int) blockLength_U];
+            polynomialBuildExpLut(field, generatorRoots_U[i], (int) (blockLength_U - 1), generatorRootExp_U[i]);
         }
 
         // calculate and store the first min_distance powers of every element in the field
@@ -664,9 +664,9 @@ public class CorrectReedSolomon {
     // coeff must be of size nroots + 1
     // e.g. 2 roots (x + alpha)(x + alpha^2) yields a poly with 3 terms x^2 + g0*x + g1
     private Polynomial reedSolomonBuildGenerator(int nroots_U,  byte[] roots_U) {
-        for (int i_U = 0; Integer.compareUnsigned(i_U, nroots_U) < 0; i_U++) {
-            roots_U[i_U] = field.exp_U[Integer.remainderUnsigned(
-                    generatorRootGap_U * (i_U + Byte.toUnsignedInt(firstConsecutiveRoot_U)), 255)];
+        for (int i = 0; Integer.compareUnsigned(i, nroots_U) < 0; i++) {
+            roots_U[i] = field.exp_U[Integer.remainderUnsigned(
+                    generatorRootGap_U * (i + Byte.toUnsignedInt(firstConsecutiveRoot_U)), 255)];
         }
         return polynomialCreateFromRoots(field, nroots_U, roots_U);
 
@@ -676,33 +676,33 @@ public class CorrectReedSolomon {
      * Debug print
      */
     public void debugPrint() {
-        for (int i_U = 0; Integer.compareUnsigned(i_U, 256) < 0; i_U++) {
-            System.out.printf("%3d  %3d    %3d  %3d\n", i_U, Byte.toUnsignedInt(field.exp_U[i_U]), i_U, Byte.toUnsignedInt(field.log_U[i_U]));
+        for (int i = 0; Integer.compareUnsigned(i, 256) < 0; i++) {
+            System.out.printf("%3d  %3d    %3d  %3d\n", i, Byte.toUnsignedInt(field.exp_U[i]), i, Byte.toUnsignedInt(field.log_U[i]));
         }
         System.out.println();
 
         System.out.print("roots: ");
-        for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), minDistance_U) < 0; i_U++) {
-            System.out.print(Byte.toUnsignedInt(generatorRoots_U[i_U]));
-            if (Long.compareUnsigned(Integer.toUnsignedLong(i_U), minDistance_U - 1) < 0) {
+        for (int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), minDistance_U) < 0; i++) {
+            System.out.print(Byte.toUnsignedInt(generatorRoots_U[i]));
+            if (Long.compareUnsigned(Integer.toUnsignedLong(i), minDistance_U - 1) < 0) {
                 System.out.print(", ");
             }
         }
         System.out.println('\n');
 
         System.out.print("generator: ");
-        for (int i_U = 0; Integer.compareUnsigned(i_U, generator.getOrder() + 1) < 0; i_U++) {
-            System.out.print(Byte.toUnsignedInt(generator.getCoeff(i_U)) + "*x^" + i_U);
-            if (Integer.compareUnsigned(i_U, generator.getOrder()) < 0) {
+        for (int i = 0; Integer.compareUnsigned(i, generator.getOrder() + 1) < 0; i++) {
+            System.out.print(Byte.toUnsignedInt(generator.getCoeff(i)) + "*x^" + i);
+            if (Integer.compareUnsigned(i, generator.getOrder()) < 0) {
                 System.out.print(" + ");
             }
         }
         System.out.println('\n');
 
         System.out.print("generator (alpha format): ");
-        for (int i_U = generator.getOrder() + 1; Integer.compareUnsigned(i_U, 0) > 0; i_U--) {
-            System.out.print("alpha^" + Byte.toUnsignedInt(field.log_U[Byte.toUnsignedInt(generator.getCoeff(i_U - 1))]) + "*x^" + (i_U - 1));
-            if (Integer.compareUnsigned(i_U, 1) > 0) {
+        for (int i = generator.getOrder() + 1; Integer.compareUnsigned(i, 0) > 0; i--) {
+            System.out.print("alpha^" + Byte.toUnsignedInt(field.log_U[Byte.toUnsignedInt(generator.getCoeff(i - 1))]) + "*x^" + (i - 1));
+            if (Integer.compareUnsigned(i, 1) > 0) {
                 System.out.print(" + ");
             }
         }
@@ -710,22 +710,22 @@ public class CorrectReedSolomon {
 
         System.out.print("remainder: ");
         boolean hasPrinted = false;
-        for (int i_U = 0; Integer.compareUnsigned(i_U, encodedRemainder.getOrder() + 1) < 0; i_U++) {
-            if (encodedRemainder.getCoeff(i_U) == 0) {
+        for (int i = 0; Integer.compareUnsigned(i, encodedRemainder.getOrder() + 1) < 0; i++) {
+            if (encodedRemainder.getCoeff(i) == 0) {
                 continue;
             }
             if (hasPrinted) {
                 System.out.print(" + ");
             }
             hasPrinted = true;
-            System.out.print(Byte.toUnsignedInt(errorLocator.getCoeff(i_U)) + "*x^" + i_U);
+            System.out.print(Byte.toUnsignedInt(errorLocator.getCoeff(i)) + "*x^" + i);
         }
         System.out.println("\n");
 
         System.out.print("syndromes: ");
-        for (int i_U = 0; Long.compareUnsigned(Integer.toUnsignedLong(i_U), minDistance_U) < 0; i_U++) {
-            System.out.print(Byte.toUnsignedInt(syndromes_U[i_U]));
-            if (Long.compareUnsigned(Integer.toUnsignedLong(i_U), minDistance_U - 1) < 0) {
+        for (int i = 0; Long.compareUnsigned(Integer.toUnsignedLong(i), minDistance_U) < 0; i++) {
+            System.out.print(Byte.toUnsignedInt(syndromes_U[i]));
+            if (Long.compareUnsigned(Integer.toUnsignedLong(i), minDistance_U - 1) < 0) {
                 System.out.print(", ");
             }
         }
@@ -735,57 +735,57 @@ public class CorrectReedSolomon {
 
         System.out.print("error locator: ");
         hasPrinted = false;
-        for (int i_U = 0; Integer.compareUnsigned(i_U, errorLocator.getOrder() + 1) < 0; i_U++) {
-            if (errorLocator.getCoeff(i_U) == 0) {
+        for (int i = 0; Integer.compareUnsigned(i, errorLocator.getOrder() + 1) < 0; i++) {
+            if (errorLocator.getCoeff(i) == 0) {
                 continue;
             }
             if (hasPrinted) {
                 System.out.print(" + ");
             }
             hasPrinted = true;
-            System.out.print(Byte.toUnsignedInt(errorLocator.getCoeff(i_U)) + "*x^" + i_U);
+            System.out.print(Byte.toUnsignedInt(errorLocator.getCoeff(i)) + "*x^" + i);
         }
         System.out.println("\n");
 
         System.out.print("error roots: ");
-        for (int i_U = 0; Integer.compareUnsigned(i_U, errorLocator.getOrder()) < 0; i_U++) {
-            System.out.print(polynomialEval(field, errorLocator, errorRoots_U[i_U]) + "@" + Byte.toUnsignedInt(errorRoots_U[i_U]));
-            if (Integer.compareUnsigned(i_U, errorLocator.getOrder() - 1) < 0) {
+        for (int i = 0; Integer.compareUnsigned(i, errorLocator.getOrder()) < 0; i++) {
+            System.out.print(polynomialEval(field, errorLocator, errorRoots_U[i]) + "@" + Byte.toUnsignedInt(errorRoots_U[i]));
+            if (Integer.compareUnsigned(i, errorLocator.getOrder() - 1) < 0) {
                 System.out.print(", ");
             }
         }
         System.out.println("\n");
 
         hasPrinted = false;
-        for(int i_U = 0; Integer.compareUnsigned(i_U, errorEvaluator.getOrder()) < 0; i_U++) {
-            if(errorEvaluator.getCoeff(i_U) == 0) {
+        for(int i = 0; Integer.compareUnsigned(i, errorEvaluator.getOrder()) < 0; i++) {
+            if(errorEvaluator.getCoeff(i) == 0) {
                 continue;
             }
             if(hasPrinted) {
                 System.out.print(" + ");
             }
             hasPrinted = true;
-            System.out.print(Byte.toUnsignedInt(errorEvaluator.getCoeff(i_U)) + "*x^" + i_U);
+            System.out.print(Byte.toUnsignedInt(errorEvaluator.getCoeff(i)) + "*x^" + i);
         }
         System.out.println("\n");
 
         hasPrinted = false;
-        for(int i_U = 0; Integer.compareUnsigned(i_U, errorLocatorDerivative.getOrder()) < 0; i_U++) {
-            if(errorLocatorDerivative.getCoeff(i_U) == 0) {
+        for(int i = 0; Integer.compareUnsigned(i, errorLocatorDerivative.getOrder()) < 0; i++) {
+            if(errorLocatorDerivative.getCoeff(i) == 0) {
                 continue;
             }
             if(hasPrinted) {
                 System.out.print(" + ");
             }
             hasPrinted = true;
-            System.out.print(Byte.toUnsignedInt(errorLocatorDerivative.getCoeff(i_U)) + "*x^" + i_U);
+            System.out.print(Byte.toUnsignedInt(errorLocatorDerivative.getCoeff(i)) + "*x^" + i);
         }
         System.out.println("\n");
 
         System.out.print("error locator: ");
-        for(int i_U = 0; Integer.compareUnsigned(i_U, errorLocator.getOrder()) < 0; i_U++) {
-            System.out.print(Byte.toUnsignedInt(errorVals_U[i_U]) + "@" + Byte.toUnsignedInt(errorLocations_U[i_U]));
-            if(Integer.compareUnsigned(i_U, errorLocator.getOrder() - 1) < 0) {
+        for(int i = 0; Integer.compareUnsigned(i, errorLocator.getOrder()) < 0; i++) {
+            System.out.print(Byte.toUnsignedInt(errorVals_U[i]) + "@" + Byte.toUnsignedInt(errorLocations_U[i]));
+            if(Integer.compareUnsigned(i, errorLocator.getOrder() - 1) < 0) {
                 System.out.print(", ");
             }
         }
