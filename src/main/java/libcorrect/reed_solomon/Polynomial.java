@@ -220,7 +220,6 @@ public class Polynomial implements Cloneable {
                                                      byte[] roots_U,
                                                      Polynomial  poly,
                                                      Polynomial[] scratch) {
-        int order_U = nroots_U;
         Polynomial l = new Polynomial(1);
 
         // we'll keep two temporary stores of rightside polynomial
@@ -250,15 +249,14 @@ public class Polynomial implements Cloneable {
             polynomialMul(field, l, r[nextrcoeff_U], r[rcoeffres_U]);
         }
 
-        poly.coeff = Arrays.copyOf(r[rcoeffres_U].coeff, order_U + 1);
-        poly.order = order_U;
+        poly.coeff = Arrays.copyOf(r[rcoeffres_U].coeff, nroots_U + 1);
+        poly.order = nroots_U;
 
         return poly;
     }
 
-    public static Polynomial polynomialCreateFromRoots(Field field, int nroots_U, byte[] roots_U) {
-        Polynomial poly = new Polynomial(nroots_U);
-        int order_U = nroots_U;
+    public static Polynomial polynomialCreateFromRoots(Field field, int nroots, byte[] roots) {
+        Polynomial poly = new Polynomial(nroots);
         Polynomial l = new Polynomial(1);
 
         Polynomial[] r = new Polynomial[2];
@@ -266,14 +264,14 @@ public class Polynomial implements Cloneable {
         // each time through the loop, we take the previous result and use it as new rightside
         // swap back and forth (prevents the need for a copy)
 
-        r[0] = new Polynomial(order_U);
-        r[1] = new Polynomial(order_U);
+        r[0] = new Polynomial(nroots);
+        r[1] = new Polynomial(nroots);
         r[0].order = 1;
 
         int rcoeffres_U = 0;
 
         // initialize the result with x + roots[0]
-        r[rcoeffres_U].coeff[0] = roots_U[0];
+        r[rcoeffres_U].coeff[0] = roots[0];
         r[rcoeffres_U].coeff[1] = (byte) 1;
 
         // initialize lcoeff[1] with x
@@ -282,16 +280,16 @@ public class Polynomial implements Cloneable {
 
         // loop through, using previous run's result as the new right hand side
         // this allows us to multiply one group at a time
-        for (int i = 1; Integer.compareUnsigned(i, nroots_U) < 0; i++) {
-            l.coeff[0] =  roots_U[i];
-            int nextrcoeff_U = rcoeffres_U;
+        for (int i = 1; Integer.compareUnsigned(i, nroots) < 0; i++) {
+            l.coeff[0] =  roots[i];
+            int nextrCoeff = rcoeffres_U;
             rcoeffres_U = Integer.remainderUnsigned(rcoeffres_U + 1, 2);
             r[rcoeffres_U].order = i + 1;
-            polynomialMul(field, l, r[nextrcoeff_U], r[rcoeffres_U]);
+            polynomialMul(field, l, r[nextrCoeff], r[rcoeffres_U]);
         }
 
-        poly.coeff = Arrays.copyOf(r[rcoeffres_U].coeff, order_U + 1);
-        poly.order = order_U;
+        poly.coeff = Arrays.copyOf(r[rcoeffres_U].coeff, nroots + 1);
+        poly.order = nroots;
 
         return poly;
     }
