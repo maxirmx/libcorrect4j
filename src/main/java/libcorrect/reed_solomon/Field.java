@@ -7,17 +7,25 @@
 package libcorrect.reed_solomon;
 
 public class Field {
-    byte[] exp_U;
-    byte[] log_U;
+    private byte[] expTable;
+    private byte[] logTable;
 
-    public Field(short primitivePoly_U) {
+    public byte exp(int i) {
+        return expTable[i];
+    }
+
+    public byte log(int i) {
+        return logTable[i];
+    }
+
+    public Field(short primitivePoly) {
         // in GF(2^8)
         // log and exp
         // bits are in GF(2), compute alpha^val in GF(2^8)
         // exp should be of size 512 so that it can hold a "wraparound" which prevents some modulo ops
         // log should be of size 256. no wraparound here, the indices into this table are field elements
-        exp_U = new byte[512];
-        log_U = new byte[256];
+        expTable = new byte[512];
+        logTable = new byte[256];
 
         // assume alpha is a primitive element, p(x) (primitive_poly) irreducible in GF(2^8)
         // addition is xor
@@ -29,25 +37,25 @@ public class Field {
         //   alpha^7 + alpha^6 + alpha^5 + alpha^4 + alpha^3 + alpha^2 + alpha + 1
         // as 8 bits packed into one byte
 
-        short element_U = 1;
-        exp_U[0] = (byte)element_U;
-        log_U[0] = (byte)0;  // really, it's undefined. we shouldn't ever access this
+        short element = 1;
+        expTable[0] = (byte)element;
+        logTable[0] = (byte)0;  // really, it's undefined. we shouldn't ever access this
 
         for (short i = 1; i < 512; i++) {
-            element_U = (short) (Short.toUnsignedInt(element_U) * 2);
-            element_U = (short) (Short.toUnsignedInt(element_U) > 255 ? Short.toUnsignedInt(element_U) ^ Short.toUnsignedInt(primitivePoly_U) : Short.toUnsignedInt(element_U));
-            exp_U[Short.toUnsignedInt(i)] = (byte) element_U;
+            element = (short) (Short.toUnsignedInt(element) * 2);
+            element = (short) (Short.toUnsignedInt(element) > 255 ? Short.toUnsignedInt(element) ^ Short.toUnsignedInt(primitivePoly) : Short.toUnsignedInt(element));
+            expTable[Short.toUnsignedInt(i)] = (byte) element;
             if (Short.toUnsignedInt(i) < 256) {
-                log_U[Short.toUnsignedInt(element_U)] =(byte) i;
+                logTable[Short.toUnsignedInt(element)] =(byte) i;
             }
         }
     }
 
-    public byte fieldMulLogElement(byte l_U, byte r_U) {
+    public byte fieldMulLogElement(byte l, byte r) {
         // like field_mul_log, but returns a field_element_t
         // because we are doing lookup here, we can safely skip the wrapover check
-        short res_U = (short) (Short.toUnsignedInt((short) Byte.toUnsignedInt(l_U)) + Short.toUnsignedInt((short) Byte.toUnsignedInt(r_U)));
-        return exp_U[Short.toUnsignedInt(res_U)];
+        short res_U = (short) (Short.toUnsignedInt((short) Byte.toUnsignedInt(l)) + Short.toUnsignedInt((short) Byte.toUnsignedInt(r)));
+        return expTable[Short.toUnsignedInt(res_U)];
     }
 
     public byte fieldAdd(byte l_U, byte r_U) {
@@ -81,8 +89,8 @@ public class Field {
         }
         // multiply two field elements by adding their logarithms.
         // yep, get your slide rules out
-        short res_U = (short)(Short.toUnsignedInt((short)Byte.toUnsignedInt(log_U[Byte.toUnsignedInt(l_U)])) +
-                              Short.toUnsignedInt((short)Byte.toUnsignedInt(log_U[Byte.toUnsignedInt(r_U)])));
+        short res_U = (short)(Short.toUnsignedInt((short)Byte.toUnsignedInt(logTable[Byte.toUnsignedInt(l_U)])) +
+                              Short.toUnsignedInt((short)Byte.toUnsignedInt(logTable[Byte.toUnsignedInt(r_U)])));
 
         // if coeff exceeds 255, we would normally have to wrap it back around
         // alpha^255 = 1; alpha^256 = alpha^255 * alpha^1 = alpha^1
@@ -91,7 +99,7 @@ public class Field {
         // the result must be clamped to [0, 511]
         // the greatest we can see at this step is alpha^255 * alpha^255
         //   = alpha^510
-        return exp_U[Short.toUnsignedInt(res_U)];
+        return expTable[Short.toUnsignedInt(res_U)];
     }
 
     public byte fieldDiv(byte l_U, byte r_U) {
@@ -110,9 +118,9 @@ public class Field {
         // so, instead, always add 255. in some cases, we'll wrap over, but
         // that's ok because the exp table runs up to 511.
         short res_U = (short)(Short.toUnsignedInt((short)255) +
-                              Short.toUnsignedInt((short)Byte.toUnsignedInt(log_U[Byte.toUnsignedInt(l_U)])) -
-                              Short.toUnsignedInt((short)Byte.toUnsignedInt(log_U[Byte.toUnsignedInt(r_U)])));
-        return exp_U[Short.toUnsignedInt(res_U)];
+                              Short.toUnsignedInt((short)Byte.toUnsignedInt(logTable[Byte.toUnsignedInt(l_U)])) -
+                              Short.toUnsignedInt((short)Byte.toUnsignedInt(logTable[Byte.toUnsignedInt(r_U)])));
+        return expTable[Short.toUnsignedInt(res_U)];
     }
 
     public byte fieldMulLog(byte l_U, byte r_U) {
@@ -145,13 +153,13 @@ public class Field {
         // take the logarithm, multiply, and then "exponentiate"
         // n.b. the exp table only considers powers of alpha, the primitive element
         // but here we have an arbitrary coeff
-        byte log_U = this.log_U[Byte.toUnsignedInt(elem_U)];
+        byte log_U = this.logTable[Byte.toUnsignedInt(elem_U)];
         int resLog = Byte.toUnsignedInt(log_U) * pow;
         int mod = resLog % 255;
         if (mod < 0) {
             mod += 255;
         }
-        return exp_U[mod];
+        return expTable[mod];
     }
 
 }
