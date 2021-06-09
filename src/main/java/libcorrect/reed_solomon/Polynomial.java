@@ -151,7 +151,7 @@ public class Polynomial implements Cloneable {
 
 
         // XXX make sure divisor[divisor_order] is nonzero
-        byte divisorLeading_U = field.log(Byte.toUnsignedInt(divisor.coeff[divisor.order]));
+        byte divisorLeading = field.log(Byte.toUnsignedInt(divisor.coeff[divisor.order]));
 
         // long division steps along one order at a time, starting at the highest order
         for (int i = dividend.order; Integer.compareUnsigned(i, 0) > 0; i--) {
@@ -165,8 +165,8 @@ public class Polynomial implements Cloneable {
             if (Byte.toUnsignedInt(mod.coeff[i]) == 0) {
                 continue;
             }
-            int qOrder_U = i - divisor.order;
-            byte qCoeff_U = (byte) field.fieldDivLog(field.log(Byte.toUnsignedInt(mod.coeff[i])), divisorLeading_U);
+            int qOrder = i - divisor.order;
+            byte qCoeff = field.fieldDivLog(field.log(Byte.toUnsignedInt(mod.coeff[i])), divisorLeading);
 
             // now that we've chosen q, multiply the divisor by q and subtract from
             //   our remainder. subtracting in GF(2^8) is XOR, just like addition
@@ -175,8 +175,8 @@ public class Polynomial implements Cloneable {
                     continue;
                 }
                 // all of the multiplication is shifted up by q_order places
-                mod.coeff[j + qOrder_U] = field.fieldAdd(mod.coeff[j + qOrder_U],
-                        field.fieldMulLogElement(field.log(Byte.toUnsignedInt(divisor.coeff[j])), qCoeff_U));
+                mod.coeff[j + qOrder] = field.fieldAdd(mod.coeff[j + qOrder],
+                        field.fieldMulLogElement(field.log(Byte.toUnsignedInt(divisor.coeff[j])), qCoeff));
 
             }
         }
