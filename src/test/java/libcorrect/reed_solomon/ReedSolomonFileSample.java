@@ -10,7 +10,7 @@ import java.util.Arrays;
 
 import static libcorrect.reed_solomon.ReedSolomon.*;
 
-public class ReedSolomonSample {
+public class ReedSolomonFileSample {
 
     boolean testAgainstSample(String inputFileName, String sampleFileName, short polynomial, long minDistance) {
         try {
