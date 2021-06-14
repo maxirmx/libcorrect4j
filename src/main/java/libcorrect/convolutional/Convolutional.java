@@ -58,10 +58,10 @@ public class Convolutional {
      * with rate 1/2, order 7 and polynomials 0161, 0127, call
      * new Convolutional (2, 7, {0161, 0127});
      *
-     * @param r      inverted rate
-     * @param o     order
-     * @param p      polynomials
-     * @throws IllegalArgumentException if requested encoder/decoder cannot be create
+     * @param r    inverted rate
+     * @param o    order
+     * @param p    polynomials
+     * @throws IllegalArgumentException if requested encoder/decoder cannot be created
      */
     public Convolutional(int r, int o, short[] p) throws IllegalArgumentException {
         if (Integer.compareUnsigned(o, Integer.SIZE) > 0) {
