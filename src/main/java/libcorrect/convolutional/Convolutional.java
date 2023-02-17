@@ -217,7 +217,7 @@ public class Convolutional {
         if (Integer.compareUnsigned(iter, 2_220) < 0) {
             return;
         }
-        System.out.println("iteration: " + Integer.toUnsignedString(iter);
+        System.out.println("iteration: " + Integer.toUnsignedString(iter));
         System.out.println("errors:");
         for (int i = 0; Integer.compareUnsigned(i, Integer.divideUnsigned(numstates_U, 2)) < 0; i++) {
             System.out.printf("%2d: %d\n", i, Short.toUnsignedInt(errorBuffer.getWriteError(i)));
