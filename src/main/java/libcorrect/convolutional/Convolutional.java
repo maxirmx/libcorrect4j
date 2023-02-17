@@ -266,7 +266,7 @@ public class Convolutional {
 
         // we limit history to go back as far as 5 * the order of our polynomial
         historyBuffer = new HistoryBuffer(minTraceback_U, tracebackLength_U, renormalizeInterval_U,
-                numstates_U / 2, 1 << (order_U - 1));
+                Integer.divideUnsigned(numstates_U, 2), 1 << (order_U - 1));
         errorBuffer = new ErrorBuffer(numstates_U);
     }
 
