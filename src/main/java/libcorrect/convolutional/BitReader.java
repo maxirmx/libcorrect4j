@@ -58,6 +58,6 @@ public class BitReader {
 		copyMask_U = (byte)(Byte.toUnsignedInt(copyMask_U) << this.currentByteLen_U - Integer.toUnsignedLong(n_U));
 		read_U |= (Byte.toUnsignedInt(this.currentByte_U) & Byte.toUnsignedInt(copyMask_U)) >> this.currentByteLen_U - Integer.toUnsignedLong(n_U);
 		this.currentByteLen_U = this.currentByteLen_U - Integer.toUnsignedLong(n_U);
-		return (byte)(Byte.toUnsignedInt(reverseTable_U[read_U]) >> 8 - nCopy_U);
+		return (byte)(Byte.toUnsignedInt(reverseTable_U[read_U]) >>> 8 - nCopy_U);
 	}
 }
