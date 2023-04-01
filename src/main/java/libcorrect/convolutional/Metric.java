@@ -39,7 +39,7 @@ public class Metric {
             int d = Byte.toUnsignedInt(softY_U[i+shift]) - softX_U;
             dist_U = (short)(Short.toUnsignedInt(dist_U) + d * d);
         }
-        return (short)(Short.toUnsignedInt(dist_U) >> 3);
+        return (short)(Short.toUnsignedInt(dist_U) >>> 3);
     }
 
 }
