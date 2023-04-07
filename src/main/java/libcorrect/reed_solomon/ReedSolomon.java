@@ -609,7 +609,7 @@ public class ReedSolomon {
             }
 
             byte loc_U = field.fieldDiv((byte) 1, errorRoots[i]);
-            for (int j = 0; Integer.compareUnsigned(j, 256) < 0; j++) {
+            for (int j = 0; j < 256; j++) {
                 if (field.fieldPow((byte) j, gRootGap) == loc_U) {
                     errorLocations[i] = field.log(j);
                     break;
