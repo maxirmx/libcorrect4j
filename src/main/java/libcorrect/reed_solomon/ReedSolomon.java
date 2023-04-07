@@ -741,7 +741,7 @@ public class ReedSolomon {
         System.out.print("generator: ");
         for (int i = 0; i < (generator.getOrder() + 1); i++) {
             System.out.print(Byte.toUnsignedInt(generator.getCoeff(i)) + "*x^" + i);
-            if (i < generator.getOrder()) < 0) {
+            if (i < generator.getOrder()) {
                 System.out.print(" + ");
             }
         }
