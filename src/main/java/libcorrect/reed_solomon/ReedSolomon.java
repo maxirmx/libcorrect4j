@@ -610,7 +610,7 @@ public class ReedSolomon {
 
             byte loc_U = field.fieldDiv((byte) 1, errorRoots[i]);
             for (int j = 0; j < 256; j++) {
-                if (field.fieldPow((byte) j, gRootGap) == loc_U) {
+                if (field.fieldPow((byte) j, Byte.toUnsignedInt(gRootGap)) == loc_U) {
                     errorLocations[i] = field.log(j);
                     break;
                 }
@@ -626,7 +626,7 @@ public class ReedSolomon {
      */
     private void findErrorRootsFromLocations(byte generatorRootGap, int numErrors) {
         for (int i = 0; Integer.compareUnsigned(i, numErrors) < 0; i++) {
-            byte loc_U = field.fieldPow(field.exp(Byte.toUnsignedInt(errorLocations[i])), generatorRootGap);
+            byte loc_U = field.fieldPow(field.exp(Byte.toUnsignedInt(errorLocations[i])), Byte.toUnsignedInt(generatorRootGap));
             // field_element_t loc = field.exp[error_locations[i]];
             errorRoots[i] = field.fieldDiv((byte) 1, loc_U);
         }
@@ -798,7 +798,7 @@ public class ReedSolomon {
 
         System.out.print("error roots: ");
         for (int i = 0; Integer.compareUnsigned(i, errorLocator.getOrder()) < 0; i++) {
-            System.out.print(eval(field, errorLocator, errorRoots[i]) + "@" + Byte.toUnsignedInt(errorRoots[i]));
+            System.out.print(Byte.toUnsignedInt(eval(field, errorLocator, errorRoots[i])) + "@" + Byte.toUnsignedInt(errorRoots[i]));
             if (Integer.compareUnsigned(i, errorLocator.getOrder() - 1) < 0) {
                 System.out.print(", ");
             }
