@@ -11,7 +11,7 @@ public class BitReader {
     private static final byte[] reverseTable_U = createReverseTable();
 
     private static byte[] createReverseTable() {
-    byte[] rT_U = new byte[256];
+        byte[] rT_U = new byte[256];
         for(int i = 0; i < 256; i++) {
             rT_U[i] =
         (byte)((i & 0x80) >> 7 | (i & 0x40) >> 5 | (i & 0x20) >> 3 | 
@@ -21,7 +21,7 @@ public class BitReader {
         return rT_U;
     }
 
-    byte currentByte_U;;
+    byte currentByte_U;
     long byteIndex_U;
     long len_U;
     long currentByteLen_U;
