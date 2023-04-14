@@ -724,7 +724,7 @@ public class ReedSolomon {
      * Debug print
      */
     public void debugPrint() {
-        for (int i = 0; Integer.compareUnsigned(i, 256) < 0; i++) {
+        for (int i = 0; i < 256; i++) {
             System.out.printf("%3d  %3d    %3d  %3d\n", i, Byte.toUnsignedInt(field.exp(i)), i, Byte.toUnsignedInt(field.log(i)));
         }
         System.out.println();
@@ -798,7 +798,7 @@ public class ReedSolomon {
 
         System.out.print("error roots: ");
         for (int i = 0; i < errorLocator.getOrder(); i++) {
-            System.out.print(eval(field, errorLocator, errorRoots[i]) + "@" + Byte.toUnsignedInt(errorRoots[i]));
+            System.out.print(Byte.toUnsignedInt(eval(field, errorLocator, errorRoots[i])) + "@" + Byte.toUnsignedInt(errorRoots[i]));
             if (i < errorLocator.getOrder() - 1) {
                 System.out.print(", ");
             }
