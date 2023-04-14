@@ -170,7 +170,7 @@ public class Polynomial implements Cloneable {
 
             // now that we've chosen q, multiply the divisor by q and subtract from
             //   our remainder. subtracting in GF(2^8) is XOR, just like addition
-            for (int j = 0; Integer.compareUnsigned(j, divisor.order) <= 0; j++) {
+            for (int j = 0; j <= divisor.order; j++) {
                 if (Byte.toUnsignedInt(divisor.coeff[j]) == 0) {
                     continue;
                 }
@@ -249,7 +249,7 @@ public class Polynomial implements Cloneable {
 
         byte res = 0;
 
-        for (int i = 0; Integer.compareUnsigned(i, order) <= 0; i++) {
+        for (int i = 0; i <= order; i++) {
             if (Byte.toUnsignedInt(coeff[i]) != 0) {
                 // multiply-accumulate by the next coeff times the next power of val
                 res = field.fieldAdd(res, field.fieldMulLogElement(field.log(Byte.toUnsignedInt(coeff[i])), valExp[i]));

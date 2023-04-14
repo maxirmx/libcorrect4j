@@ -80,7 +80,7 @@ public class Field {
         // an odd number of XORs puts you back at your value
 
         // so, just throw away all the even n
-        return (byte) (Integer.remainderUnsigned(n_U, 2) != 0 ? Byte.toUnsignedInt(elem_U) : 0);
+        return (byte) (n_U % 2 != 0 ? Byte.toUnsignedInt(elem_U) : 0);
     }
 
     public byte fieldMul(byte l, byte r) {
