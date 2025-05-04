@@ -1,6 +1,6 @@
 # libcorrect4j
 
-<img width="96" alt="fec-small" align="left" src="https://github.com/maxirmx/libcorrect4j/assets/2081498/6630ceae-8cda-41fd-b361-cf549a0bf75b">
+<img width="96" alt="libcorrect4j" align="left" src="https://github.com/maxirmx/libcorrect4j/assets/2081498/6630ceae-8cda-41fd-b361-cf549a0bf75b">
 
 **libcorrect4j** is a Java library implementing Forward Error Correction (FEC) techniques, enabling the addition of redundancy to data packets for reliable transmission over noisy or unreliable channels.
 
